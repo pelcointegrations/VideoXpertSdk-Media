@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>VideoXpertSdk-Media</id>
+    <title>VideoXpert SDK Media Controller</title>
+    <version>3.0.0000</version>
+    <authors>Pelco by Schneider Electric</authors>
+    <owners>Pelco by Schneider Electric</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <iconUrl>https://raw.githubusercontent.com/pelcointegrations/VideoXpertSdk/master/Nuget/pelco-integrations-64x64.png</iconUrl>
+    <projectUrl>https://github.com/pelcointegrations/VideoXpertSdk-Media</projectUrl>
+    <repository type="git" url="https://github.com/pelcointegrations/VideoXpertSdk-Media" />
+    <description>This library provides media playback support via GStreamer, allowing applications to display video streams from VideoXpert systems.</description>
+    <summary>The VxSdk Media Controller enables developers to display streams from a VideoXpert system.</summary>
+    <copyright>Copyright ©2019 Pelco</copyright>
+    <tags>native, videoxpertsdk, videoxpert, vxsdk, sdk, pelco, schneider-electric, media, controller, mediacontroller, rtsp, gstreamer</tags>
+  </metadata>
+  <files>
+    <!-- Include header files-->
+    <file src="..\VideoXpertSdkMedia\Include\*" target="\build\native\include\VxSdk-Media\" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\include\*" target="\build\native\include\VxSdk\" />
+
+    <!-- Include Gstreamer cert file-->
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\etc\ssl\certs\ca-certificates.crt" target="\build\native\etc\ssl\certs" />  
+
+    <!-- Win32 v140 -->
+    <file src="..\VideoXpertSdkMedia\bin\Win32\Release\VxSdk-Media.dll" target="\build\native\Win32\bin\VxSdk-Media.dll" />
+    <file src="..\VideoXpertSdkMedia\bin\Win32\Release\VxSdk-Media.lib" target="\build\native\Win32\lib\VxSdk-Media.lib" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\Win32\bin\VxSdk.dll" target="\build\native\Win32\bin\" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\Win32\lib\VxSdk.lib" target="\build\native\Win32\lib\" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\Win32\bin\cpprest140_2_9.dll" target="\build\native\Win32\bin\" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\bin\*" target="\build\native\Win32\bin\" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\**\**\*" target="\build\native\Win32\lib" />
+
+    <!-- x64 v140 -->
+    <file src="..\VideoXpertSdkMedia\bin\x64\Release\VxSdk-Media.dll" target="\build\native\x64\bin\VxSdk-Media.dll" />
+    <file src="..\VideoXpertSdkMedia\bin\x64\Release\VxSdk-Media.lib" target="\build\native\x64\lib\VxSdk-Media.lib" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\x64\bin\VxSdk.dll" target="\build\native\x64\bin\" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\x64\lib\VxSdk.lib" target="\build\native\x64\lib\" />
+    <file src="..\VideoXpertSdkMedia\packages\VideoXpertSdk\build\native\x64\bin\cpprest140_2_9.dll" target="\build\native\x64\bin\" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\bin\*" target="\build\native\x64\bin" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\**\**\*" target="\build\native\x64\lib" />
+
+    <!-- vs targets file -->
+    <file src="VideoXpertSdk-Media.targets" target="\build\native\VideoXpertSdk-Media.targets"/>
+  </files>
+</package>
