@@ -21,8 +21,9 @@ if NOT DEFINED CMAKE_EXE (
 )
 
 REM Unzip libgstlibav.dll if it doesn't exist
-if not exist "%CD%\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.dll" (
-powershell  -Command "Expand-Archive '%CD%\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.zip' -DestinationPath '%CD%\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\'"
+set GST_LIB_PATH="%CD%\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0"
+if not exist "%GST_LIB_PATH%\libgstlibav.dll" (
+  powershell -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('%GST_LIB_PATH%\libgstlibav.zip', '%GST_LIB_PATH%'); }"
 )
 
 REM Create the output path for the NuGet package if it doesn't exist
