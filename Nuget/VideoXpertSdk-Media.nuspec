@@ -65,25 +65,25 @@
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\bin\libx264-148.dll" target="\build\native\Win32\bin\" />
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\bin\libxml2-2.dll" target="\build\native\Win32\bin\" />
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\bin\libz.dll" target="\build\native\Win32\bin\" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gio\modules\libgiognutls.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstautodetect.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstcoreelements.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstd3d.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstdirectsound.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstisomp4.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstjpeg.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstmulaw.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstopengl.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstopenglmixers.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstplayback.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstrtp.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstrtpmanager.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstsoup.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstudp.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoconvert.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoparsersbad.dll" target="\build\native\Win32\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstx264.dll" target="\build\native\Win32\lib" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gio\modules\libgiognutls.dll" target="\build\native\Win32\lib\gio\modules" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstautodetect.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstcoreelements.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstd3d.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstdirectsound.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstisomp4.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstjpeg.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstmulaw.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstopengl.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstopenglmixers.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstplayback.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstrtp.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstrtpmanager.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstsoup.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstudp.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoconvert.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoparsersbad.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\Win32\gstreamer_runtime\lib\gstreamer-1.0\libgstx264.dll" target="\build\native\Win32\lib\gstreamer-1.0" />
 
     <!-- x64 v140 -->
     <file src="..\VideoXpertSdkMedia\bin\x64\Release\VxSdk-Media.dll" target="\build\native\x64\bin\VxSdk-Media.dll" />
@@ -127,25 +127,25 @@
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\bin\libx264-148.dll" target="\build\native\x64\bin\" />
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\bin\libxml2-2.dll" target="\build\native\x64\bin" />
     <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\bin\libz.dll" target="\build\native\x64\bin" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gio\modules\libgiognutls.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstautodetect.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstcoreelements.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstd3d.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstdirectsound.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstisomp4.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstjpeg.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstmulaw.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstopengl.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstopenglmixers.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstplayback.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstrtp.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstrtpmanager.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstsoup.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstudp.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoconvert.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoparsersbad.dll" target="\build\native\x64\lib" />
-    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstx264.dll" target="\build\native\x64\lib" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gio\modules\libgiognutls.dll" target="\build\native\x64\lib\gio\modules" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstautodetect.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstcoreelements.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstd3d.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstdirectsound.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstisomp4.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstjpeg.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstlibav.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstmulaw.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstopengl.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstopenglmixers.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstplayback.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstrtp.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstrtpmanager.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstsoup.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstudp.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoconvert.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstvideoparsersbad.dll" target="\build\native\x64\lib\gstreamer-1.0" />
+    <file src="..\VideoXpertSdkMedia\ThirdParty\GStreamer\1.14.4\x64\gstreamer_runtime\lib\gstreamer-1.0\libgstx264.dll" target="\build\native\x64\lib\gstreamer-1.0" />
 
     <!-- vs targets file -->
     <file src="VideoXpertSdk-Media.targets" target="\build\native\VideoXpertSdk-Media.targets"/>
