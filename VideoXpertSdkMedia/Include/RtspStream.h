@@ -36,6 +36,8 @@ namespace MediaController {
             bool GoToLive() override;
             void NewRequest(MediaRequest& request) override;
             bool Resume(float speed = 0, unsigned int unixTime = 0) override;
+            bool StartLocalRecording(char* filePath, char* fileName) override;
+            void StopLocalRecording() override;
 
         private:
             Commands* _rtspCommands;

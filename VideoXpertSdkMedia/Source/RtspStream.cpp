@@ -87,6 +87,17 @@ bool Rtsp::Stream::Resume(float speed, unsigned int unixTime) {
     return ret;
 }
 
+bool Rtsp::Stream::StartLocalRecording(char* filePath, char* fileName) {
+    if (this->_gst->GetMode() == IController::kStopped)
+        return false;
+
+    return this->_gst->StartLocalRecord(filePath, fileName);
+}
+
+void Rtsp::Stream::StopLocalRecording() {
+        this->_gst->StopLocalRecord();
+}
+
 void Rtsp::Stream::NewRequest(MediaRequest& request) {
     this->_rtspCommands->ResetPath(request.dataInterface.dataEndpoint);
 }

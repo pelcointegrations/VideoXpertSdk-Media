@@ -142,6 +142,24 @@ void Controller::Stop() {
         this->audioStream->state->Stop(*this->audioStream);
 }
 
+bool Controller::StartLocalRecording(char* filePath, char* fileName) {
+    if (filePath == nullptr || fileName == nullptr)
+        return false;
+
+    if (std::string(filePath).empty() || std::string(fileName).empty())
+        return false;
+
+    if (this->stream != nullptr)
+        return this->stream->StartLocalRecording(filePath, fileName);
+
+    return false;
+}
+
+void Controller::StopLocalRecording() {
+    if (this->stream != nullptr)
+        this->stream->StopLocalRecording();
+}
+
 void Controller::AddObserver(TimestampEventCallback observer) {
     if (this->stream != nullptr)
         this->stream->GetGstreamer()->AddObserver(observer);

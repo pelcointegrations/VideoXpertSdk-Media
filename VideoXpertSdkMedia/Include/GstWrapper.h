@@ -151,6 +151,18 @@ namespace MediaController {
         void Pause() const;
 
         /// <summary>
+        /// Starts recording the current video stream to a local file.
+        /// </summary>
+        /// <param name="filePath">The directory to store the generated video file.</param>
+        /// <param name="fileName">The name to use for the generated video file.</param>
+        bool StartLocalRecord(char* filePath, char* fileName);
+
+        /// <summary>
+        /// Stops the current local recording in progress, if any.
+        /// </summary>
+        void StopLocalRecord();
+
+        /// <summary>
         /// Clear the pipeline and display window.
         /// </summary>
         void ClearPipeline();

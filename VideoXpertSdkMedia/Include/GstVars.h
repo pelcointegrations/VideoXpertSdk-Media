@@ -17,15 +17,22 @@ namespace MediaController {
         GstElement *rtcpSink;
         GstElement *videoDepay;
         GstElement *videoDec;
+        GstElement *tee;
+        GstElement *queueView;
         GstElement *videoConvert;
         GstElement *videoSink;
         GstElement *audioDepay;
         GstElement *audioDec;
         GstElement *audioSink;
+        GstElement *queueRecord;
+        GstElement *x264enc;
+        GstElement *mkvMux;
+        GstElement *fileSink;
         GstCaps *caps;
         GstPadLinkReturn linkReturn;
         GstPad *srcPad;
         GstPad *sinkPad;
+        GstPad *teePad;
 
         /// <summary>
         /// The list of timestamp event observers.
@@ -64,11 +71,13 @@ namespace MediaController {
 
         bool isPipelineActive;
         bool isMjpeg;
+        bool isRecording;
         std::string rtpCaps;
         std::string cookie;
         std::string hostIp;
         std::string multicastAddress;
         std::string location;
+        std::string recordingFilePath;
         gint rtpPort;
         gint rtcpPort;
         gint rtcpSinkPort;

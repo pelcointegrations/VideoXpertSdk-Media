@@ -30,6 +30,8 @@ namespace MediaController {
         void PlayStream(float speed, unsigned int unixTime) override;
         void Pause() override;
         void Stop() override;
+        bool StartLocalRecording(char* filePath, char* fileName) override;
+        void StopLocalRecording() override;
         void NewRequest(MediaRequest& request) override;
         void AddObserver(TimestampEventCallback observer) override;
         void AddStreamObserver(StreamEventCallback observer) override;

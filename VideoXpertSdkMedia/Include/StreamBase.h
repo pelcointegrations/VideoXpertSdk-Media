@@ -23,6 +23,8 @@ namespace MediaController {
         void Pause() override;
         void Stop() override;
         void NewRequest(MediaRequest& request) override;
+        bool StartLocalRecording(char* filePath, char* fileName);
+        void StopLocalRecording();
 
         /// <summary>
         /// Send PLAY on an existing stream.

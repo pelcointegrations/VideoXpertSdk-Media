@@ -29,6 +29,10 @@ void StreamBase::NewRequest(MediaRequest& request) {}
 
 bool StreamBase::Resume(float speed, unsigned int unixTime) { return false; }
 
+bool StreamBase::StartLocalRecording(char* filePath, char* fileName) { return false; }
+
+void StreamBase::StopLocalRecording() { }
+
 GstWrapper* StreamBase::GetGstreamer() const {
     return this->_gst;
 }

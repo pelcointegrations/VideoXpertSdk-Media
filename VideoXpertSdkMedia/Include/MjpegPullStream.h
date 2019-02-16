@@ -34,6 +34,8 @@ namespace MediaController {
             bool Resume(float speed, unsigned int unixTime) override;
             bool GoToLive() override;
             void NewRequest(MediaRequest& request) override;
+            bool StartLocalRecording(char* filePath, char* fileName) override;
+            void StopLocalRecording() override;
 
         private:
             VxSdk::IVxDataSession* _dataSession;

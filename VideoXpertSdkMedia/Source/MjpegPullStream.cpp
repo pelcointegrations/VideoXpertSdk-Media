@@ -143,3 +143,7 @@ void MjpegPull::Stream::NewRequest(MediaRequest& request) {
             this->_gst->SetCookie(std::string(authToken));
     }
 }
+
+bool MjpegPull::Stream::StartLocalRecording(char* filePath, char* fileName) { return false; }
+
+void MjpegPull::Stream::StopLocalRecording() { }

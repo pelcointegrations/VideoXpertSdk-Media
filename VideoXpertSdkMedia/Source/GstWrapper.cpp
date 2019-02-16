@@ -7,6 +7,7 @@
 #include <gst/video/video.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 #include "libsoup/soup-logger.h"
 #include <chrono>
 #ifdef WIN32
@@ -233,29 +234,65 @@ void OnBusMessage(GstBus *bus, GstMessage *msg, GstVars *vars) {
         // Set the pipeline back to playing.
         gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
         break;
+    case GST_MESSAGE_ELEMENT: {
+        const GstStructure *s = gst_message_get_structure(msg);
+        if (gst_structure_has_name(s, "GstBinForwarded")) {
+            GstMessage *forward_msg = NULL;
+
+            gst_structure_get(s, "message", GST_TYPE_MESSAGE, &forward_msg, NULL);
+            if (GST_MESSAGE_TYPE(forward_msg) == GST_MESSAGE_EOS) {
+                g_print("EOS from element %s\n", GST_OBJECT_NAME(GST_MESSAGE_SRC(forward_msg)));
+                gst_element_set_state(vars->queueRecord, GST_STATE_NULL);
+                gst_element_set_state(vars->x264enc, GST_STATE_NULL);
+                gst_element_set_state(vars->mkvMux, GST_STATE_NULL);
+                gst_element_set_state(vars->fileSink, GST_STATE_NULL);
+
+                gst_bin_remove(GST_BIN(vars->pipeline), vars->queueRecord);
+                gst_bin_remove(GST_BIN(vars->pipeline), vars->x264enc);
+                gst_bin_remove(GST_BIN(vars->pipeline), vars->mkvMux);
+                gst_bin_remove(GST_BIN(vars->pipeline), vars->fileSink);
+
+                gst_object_unref(vars->queueRecord);
+                gst_object_unref(vars->x264enc);
+                gst_object_unref(vars->mkvMux);
+                gst_object_unref(vars->fileSink);
+
+                gst_element_release_request_pad(vars->tee, vars->teePad);
+                gst_object_unref(vars->teePad);
+
+                g_main_loop_unref(vars->loop);
+
+                vars->isRecording = false;
+            }
+            gst_message_unref (forward_msg);
+        }
+        break;
+    }
     default:
         break;
     }
 }
 
 // Called when rtpbin has validated a payload that we can depayload.
-static void OnPadAdded(GstElement * rtpbin, GstPad * new_pad, GstElement * depay)
-{
-    GstPad *sinkpad;
-    GstPadLinkReturn lres;
-
+static void OnPadAdded(GstElement * rtpbin, GstPad * new_pad, GstElement * depay) {
     g_print("New payload on pad: %s\n", GST_PAD_NAME(new_pad));
-
-    sinkpad = gst_element_get_static_pad(depay, Constants::kSink);
+    GstPad *sinkpad = gst_element_get_static_pad(depay, Constants::kSink);
     g_assert(sinkpad);
-
-    lres = gst_pad_link(new_pad, sinkpad);
-
+    gst_pad_link(new_pad, sinkpad);
     gst_object_unref(sinkpad);
 }
 
-static GstBusSyncReply create_window(GstBus * bus, GstMessage * message, GstVars *vars)
-{
+static GstPadProbeReturn OnUnlink(GstPad *pad, GstPadProbeInfo *info, GstVars *vars) {
+    GstPad *sinkpad = gst_element_get_static_pad(vars->queueRecord, "sink");
+    gst_pad_unlink(vars->teePad, sinkpad);
+    gst_object_unref(sinkpad);
+
+    gst_element_send_event(vars->x264enc, gst_event_new_eos());
+
+    return GST_PAD_PROBE_REMOVE;
+}
+
+static GstBusSyncReply create_window(GstBus * bus, GstMessage * message, GstVars *vars) {
     // ignore anything but 'prepare-window-handle' element messages
     if (!gst_is_video_overlay_prepare_window_handle_message(message))
         return GST_BUS_PASS;
@@ -270,6 +307,7 @@ static GstBusSyncReply create_window(GstBus * bus, GstMessage * message, GstVars
 GstWrapper::GstWrapper() {
     SetMode(Controller::kStopped);
     Init();
+    _gstVars.isRecording = false;
     _gstVars.isPipelineActive = false;
 }
 
@@ -354,12 +392,63 @@ void GstWrapper::AddEventData(void* customData) {
     _gstVars.eventData = customData;
 }
 
+bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
+    if (_gstVars.isRecording)
+        return false;
+
+    boost::filesystem::path logPath = boost::filesystem::path(filePath);
+    if (!exists(logPath))
+        if (!create_directories(logPath))
+            return false;
+
+    _gstVars.recordingFilePath = logPath.append(std::string(fileName) + ".mp4").generic_string();
+
+    GstPadTemplate *padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(_gstVars.tee), "src_%u");
+    _gstVars.teePad = gst_element_request_pad(_gstVars.tee, padTemplate, NULL, NULL);
+    _gstVars.queueRecord = gst_element_factory_make("queue", "queueRecord");
+    _gstVars.x264enc = gst_element_factory_make("x264enc", NULL);
+    _gstVars.mkvMux = gst_element_factory_make("mp4mux", NULL);
+    _gstVars.fileSink = gst_element_factory_make("filesink", NULL);
+    g_object_set(_gstVars.fileSink, "location", _gstVars.recordingFilePath.c_str(), NULL);
+    g_object_set(_gstVars.x264enc, "tune", 4, NULL);
+    _gstVars.recordingFilePath = "";
+    
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(_gstVars.queueRecord)), gst_object_ref(_gstVars.x264enc), gst_object_ref(_gstVars.mkvMux), gst_object_ref(_gstVars.fileSink), NULL);
+    gst_element_link_many(_gstVars.queueRecord, _gstVars.x264enc, _gstVars.mkvMux, _gstVars.fileSink, NULL);
+
+    gst_element_sync_state_with_parent(_gstVars.queueRecord);
+    gst_element_sync_state_with_parent(_gstVars.x264enc);
+    gst_element_sync_state_with_parent(_gstVars.mkvMux);
+    gst_element_sync_state_with_parent(_gstVars.fileSink);
+
+    GstPad *sinkpad = gst_element_get_static_pad(_gstVars.queueRecord, "sink");
+    gst_pad_link(_gstVars.teePad, sinkpad);
+    gst_object_unref(sinkpad);
+
+    GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
+    gst_bus_add_signal_watch(bus);
+    g_signal_connect(G_OBJECT(bus), "message", G_CALLBACK(OnBusMessage), &_gstVars);
+    gst_object_unref(bus);
+
+    // Start the loop to receive bus messages.
+    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
+    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
+
+    _gstVars.isRecording = true;
+    return true;
+}
+
+void GstWrapper::StopLocalRecord() {
+    if (_gstVars.isRecording)
+        gst_pad_add_probe(_gstVars.teePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
+}
+
 void GstWrapper::CreatePipeline() {
     // Create the pipeline.
     _gstVars.pipeline = gst_pipeline_new(nullptr);
     g_assert(_gstVars.pipeline);
     _gstVars.isPipelineActive = true;
-    
+
     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
     gst_bus_set_sync_handler(bus, (GstBusSyncHandler)create_window, &_gstVars, NULL);
     gst_object_unref(bus);
@@ -451,14 +540,17 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     g_assert(_gstVars.videoDepay);
     _gstVars.videoDec = gst_element_factory_make(videoDecName, "videoDec");
     g_assert(_gstVars.videoDec);
+    _gstVars.tee = gst_element_factory_make("tee", "tee");
+    g_assert(_gstVars.tee);
+    _gstVars.queueView = gst_element_factory_make("queue", "queueView");
+    g_assert(_gstVars.queueView);
     _gstVars.videoConvert = gst_element_factory_make(Constants::kVideoConvert, "videoConvert");
     g_assert(_gstVars.videoConvert);
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
 
-    // Add elements to the pipeline and link.
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoDepay, _gstVars.videoDec, _gstVars.videoConvert, _gstVars.videoSink, NULL);
-    gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
 
     // Create the bin element and start linking
     LinkBinElements();
@@ -467,6 +559,7 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     // So connect to the pad-added signal and pass the depayloader to link to it.
     g_signal_connect(_gstVars.bin, "pad-added", G_CALLBACK(OnPadAdded), _gstVars.videoDepay);
 
+    g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
     g_print("Starting RTP video receiver pipeline.\n");
 }
@@ -564,6 +657,7 @@ void GstWrapper::ClearPipeline() {
         g_main_loop_unref(_gstVars.loop);
     }
 
+    StopLocalRecord();
     gst_element_set_state(_gstVars.pipeline, GST_STATE_NULL);
     gst_object_unref(_gstVars.pipeline);
     _gstVars.isPipelineActive = false;
