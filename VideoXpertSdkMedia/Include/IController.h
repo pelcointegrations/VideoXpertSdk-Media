@@ -4,6 +4,7 @@
 #include "IStream.h"
 #include "TimestampEvent.h"
 #include "StreamEvent.h"
+#include "PelcoDataEvent.h"
 
 namespace MediaController {
 
@@ -18,6 +19,12 @@ namespace MediaController {
     /// </summary>
     /// <param>A <see cref="StreamEvent"/>.</param>
     typedef void(*StreamEventCallback)(StreamEvent*);
+
+    /// <summary>
+    /// The Pelco Data event callback function pointer.
+    /// </summary>
+    /// <param>A <see cref="PelcoDataEvent"/>.</param>
+    typedef void(*PelcoDataEventCallback)(PelcoDataEvent*);
 
     /// <summary>
     /// Defines the controller interface.
@@ -48,6 +55,12 @@ namespace MediaController {
         virtual void AddStreamObserver(StreamEventCallback observer) = 0;
 
         /// <summary>
+        /// Add a new subscriber to Pelco Data events.
+        /// </summary>
+        /// <param name="observer">The <see cref="StreamEventCallback"/> event handler.</param>
+        virtual void AddPelcoDataObserver(PelcoDataEventCallback observer) = 0;
+
+        /// <summary>
         /// Add event data to be send back during timestamp events.
         /// </summary>
         /// <param name="customData">Custom data pointer.</param>
@@ -64,6 +77,12 @@ namespace MediaController {
         /// </summary>
         /// <param name="observer">The <see cref="StreamEventCallback"/> event handler.</param>
         virtual void RemoveStreamObserver(StreamEventCallback observer) = 0;
+
+        /// <summary>
+        /// Remove an existing stream event subscriber.
+        /// </summary>
+        /// <param name="observer">The <see cref="StreamEventCallback"/> event handler.</param>
+        virtual void RemovePelcoDataObserver(PelcoDataEventCallback observer) = 0;
 
         /// <summary>
         /// Remove all existing timestamp event subscribers.

@@ -35,8 +35,10 @@ namespace MediaController {
         void NewRequest(MediaRequest& request) override;
         void AddObserver(TimestampEventCallback observer) override;
         void AddStreamObserver(StreamEventCallback observer) override;
+        void AddPelcoDataObserver(PelcoDataEventCallback observer) override;
         void RemoveObserver(TimestampEventCallback observer) override;
         void RemoveStreamObserver(StreamEventCallback observer) override;
+        void RemovePelcoDataObserver(PelcoDataEventCallback observer) override;
         void ClearObservers() override;
         void ClearStreamObservers() override;
         Mode GetMode() override;

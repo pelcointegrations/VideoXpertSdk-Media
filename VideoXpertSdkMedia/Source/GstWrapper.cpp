@@ -53,6 +53,23 @@ GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, G
         gpointer data;
 
         if (gst_rtp_buffer_map(buff, GST_MAP_READ, &rtp)) {
+            // If the nalValue is 6, test for a Pelco camera and pass back that data
+            // The test for Pelco data is PLCO in the data
+            gpointer testPtr = gst_rtp_buffer_get_payload(&rtp);
+            guint payloadSize = gst_rtp_buffer_get_payload_len(&rtp);
+            int nalValue = ((UINT8 *)testPtr)[0];
+
+            if (nalValue == 6) {
+                // Pass this back with its own callback
+                for (size_t i = 0; i < vars->pelcoDataObserverList.size(); i++) {
+                    PelcoDataEvent* newEvent = new PelcoDataEvent();
+                    newEvent->eventType = newEvent->kUnknown;
+                    memcpy(newEvent->pelcoData, testPtr, (payloadSize > sizeof(newEvent->pelcoData)) ? sizeof(newEvent->pelcoData) : payloadSize);
+                    vars->pelcoDataObserverList[i](newEvent);
+                    delete newEvent;
+                }
+            }
+
             // Parse the buffer based on the current mode.
             if (vars->mode == MediaController::Controller::kPlayback) {
                 // Playback packets contain extension data, which gives us the stream time.
@@ -384,8 +401,17 @@ void GstWrapper::RemoveObserver(TimestampEventCallback observer) {
     _gstVars.observerList.erase(remove(_gstVars.observerList.begin(), _gstVars.observerList.end(), observer), _gstVars.observerList.end());
 }
 
+void GstWrapper::AddPelcoDataObserver(PelcoDataEventCallback observer) {
+    _gstVars.pelcoDataObserverList.push_back(observer);
+}
+
+void GstWrapper::RemovePelcoDataObserver(PelcoDataEventCallback observer) {
+    _gstVars.pelcoDataObserverList.erase(remove(_gstVars.pelcoDataObserverList.begin(), _gstVars.pelcoDataObserverList.end(), observer), _gstVars.pelcoDataObserverList.end());
+}
+
 void GstWrapper::ClearObservers() {
     _gstVars.observerList.clear();
+    _gstVars.pelcoDataObserverList.clear();
 }
 
 void GstWrapper::AddEventData(void* customData) {

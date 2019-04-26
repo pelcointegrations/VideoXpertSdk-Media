@@ -40,6 +40,11 @@ namespace MediaController {
         std::vector<TimestampEventCallback> observerList;
 
         /// <summary>
+        /// The list of PelcoData event observers.
+        /// </summary>
+        std::vector<PelcoDataEventCallback> pelcoDataObserverList;
+
+        /// <summary>
         /// The current timestamp of the stream.
         /// </summary>
         unsigned long currentTimestamp;

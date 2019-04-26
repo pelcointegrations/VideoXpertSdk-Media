@@ -104,6 +104,9 @@
     <ClInclude Include="Include\StreamEvent.h">
       <Filter>Include\DataTypes</Filter>
     </ClInclude>
+    <ClInclude Include="Include\PelcoDataEvent.h">
+      <Filter>Include\DataTypes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Streaming">

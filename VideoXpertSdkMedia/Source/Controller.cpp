@@ -170,6 +170,11 @@ void Controller::AddStreamObserver(StreamEventCallback observer) {
         this->stream->AddObserver(observer);
 }
 
+void Controller::AddPelcoDataObserver(PelcoDataEventCallback observer) {
+    if (this->stream != nullptr)
+        this->stream->GetGstreamer()->AddPelcoDataObserver(observer);
+}
+
 void Controller::AddEventData(void* customData) {
     if (this->stream != nullptr)
         this->stream->GetGstreamer()->AddEventData(customData);
@@ -184,6 +189,12 @@ void Controller::RemoveStreamObserver(StreamEventCallback observer) {
     if (this->stream != nullptr)
         this->stream->RemoveObserver(observer);
 }
+
+void Controller::RemovePelcoDataObserver(PelcoDataEventCallback observer) {
+    if (this->stream != nullptr)
+        this->stream->GetGstreamer()->RemovePelcoDataObserver(observer);
+}
+
 
 void Controller::ClearObservers() {
     if (this->stream != nullptr)

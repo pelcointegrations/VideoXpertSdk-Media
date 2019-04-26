@@ -114,6 +114,18 @@ namespace MediaController {
         void RemoveObserver(TimestampEventCallback observer);
 
         /// <summary>
+        /// Add a new subscriber to Pelco Data events.
+        /// </summary>
+        /// <param name="observer">The <see cref="PelcoDataEventCallback"/> event handler.</param>
+        void AddPelcoDataObserver(PelcoDataEventCallback observer);
+
+        /// <summary>
+        /// Remove an existing Pelco Data event subscriber.
+        /// </summary>
+        /// <param name="observer">The <see cref="PelcoDataEventCallback"/> event handler.</param>
+        void RemovePelcoDataObserver(PelcoDataEventCallback observer);
+
+        /// <summary>
         /// Remove all existing timestamp event subscribers.
         /// </summary>
         void ClearObservers();
