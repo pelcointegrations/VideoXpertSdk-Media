@@ -32,6 +32,7 @@ namespace MediaController {
         void Stop() override;
         bool StartLocalRecording(char* filePath, char* fileName) override;
         void StopLocalRecording() override;
+        bool SnapShot(char* filePath, char* fileName) override;
         void NewRequest(MediaRequest& request) override;
         void AddObserver(TimestampEventCallback observer) override;
         void AddStreamObserver(StreamEventCallback observer) override;

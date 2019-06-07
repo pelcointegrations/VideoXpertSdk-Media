@@ -33,6 +33,8 @@ bool StreamBase::StartLocalRecording(char* filePath, char* fileName) { return fa
 
 void StreamBase::StopLocalRecording() { }
 
+bool StreamBase::SnapShot(char* filePath, char* fileName) { return false; }
+
 GstWrapper* StreamBase::GetGstreamer() const {
     return this->_gst;
 }

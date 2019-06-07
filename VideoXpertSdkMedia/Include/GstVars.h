@@ -34,6 +34,11 @@ namespace MediaController {
         GstPad *sinkPad;
         GstPad *teePad;
 
+        GstElement * queueSnapShot;
+        GstElement * encSnapShot;
+        GstElement * fileSinkSnapShot;
+        GstPad *teePadSnapShot;
+
         /// <summary>
         /// The list of timestamp event observers.
         /// </summary>

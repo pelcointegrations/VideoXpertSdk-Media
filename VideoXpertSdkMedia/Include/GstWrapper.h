@@ -175,6 +175,13 @@ namespace MediaController {
         void StopLocalRecord();
 
         /// <summary>
+        /// Captures a snapshot from the current video stream to a local file.
+        /// </summary>
+        /// <param name="filePath">The directory to store the generated snapshot file.</param>
+        /// <param name="fileName">The name to use for the generated snapshot file.</param>
+        bool SnapShot(char* filePath, char* fileName);
+
+        /// <summary>
         /// Clear the pipeline and display window.
         /// </summary>
         void ClearPipeline();

@@ -36,6 +36,7 @@ namespace MediaController {
             void NewRequest(MediaRequest& request) override;
             bool StartLocalRecording(char* filePath, char* fileName) override;
             void StopLocalRecording() override;
+            bool SnapShot(char* filePath, char* fileName) override;
 
         private:
             VxSdk::IVxDataSession* _dataSession;

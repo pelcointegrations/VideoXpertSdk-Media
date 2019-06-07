@@ -98,6 +98,13 @@ void Rtsp::Stream::StopLocalRecording() {
         this->_gst->StopLocalRecord();
 }
 
+bool Rtsp::Stream::SnapShot(char* filePath, char* fileName) {
+    if (this->_gst->GetMode() == IController::kStopped)
+        return false;
+
+    return this->_gst->SnapShot(filePath, fileName);
+}
+
 void Rtsp::Stream::NewRequest(MediaRequest& request) {
     this->_rtspCommands->ResetPath(request.dataInterface.dataEndpoint);
 }

@@ -38,6 +38,7 @@ namespace MediaController {
             bool Resume(float speed = 0, unsigned int unixTime = 0) override;
             bool StartLocalRecording(char* filePath, char* fileName) override;
             void StopLocalRecording() override;
+            bool SnapShot(char* filePath, char* fileName) override;
 
         private:
             Commands* _rtspCommands;

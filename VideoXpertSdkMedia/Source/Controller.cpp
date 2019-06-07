@@ -160,6 +160,19 @@ void Controller::StopLocalRecording() {
         this->stream->StopLocalRecording();
 }
 
+bool Controller::SnapShot(char* filePath, char* fileName) {
+    if (filePath == nullptr || fileName == nullptr)
+        return false;
+
+    if (std::string(filePath).empty() || std::string(fileName).empty())
+        return false;
+
+    if (this->stream != nullptr)
+        return this->stream->SnapShot(filePath, fileName);
+
+    return false;
+}
+
 void Controller::AddObserver(TimestampEventCallback observer) {
     if (this->stream != nullptr)
         this->stream->GetGstreamer()->AddObserver(observer);

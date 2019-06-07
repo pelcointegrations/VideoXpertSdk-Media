@@ -52,6 +52,13 @@ namespace MediaController {
         virtual void StopLocalRecording() = 0;
 
         /// <summary>
+        /// Starts recording the current video stream to a local file.
+        /// </summary>
+        /// <param name="filePath">The directory to store the generated video file.</param>
+        /// <param name="fileName">The name to use for the generated video file.</param>
+        virtual bool SnapShot(char* filePath, char* fileName) = 0;
+
+        /// <summary>
         /// Call Pause on the stream.
         /// </summary>
         virtual void Pause() = 0;

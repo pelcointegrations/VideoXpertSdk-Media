@@ -224,6 +224,8 @@ GstPadProbeReturn OnJpegPacketReceived(GstPad *localPad, GstPadProbeInfo *info, 
     return GST_PAD_PROBE_OK;
 }
 
+// This is used as a 'cheap' way to make "SnapShot" a blocking call
+static bool _jpegIsWritten = false;
 void OnBusMessage(GstBus *bus, GstMessage *msg, GstVars *vars) {
     // GStreamer does not support MJPEG pull sources.  After receiving a JPEG from the server we receive an EOS (End of Stream) message
     // since no further images will be pushed out.  To work around this we set the pipeline to state to NULL when we get an EOS event
@@ -259,27 +261,46 @@ void OnBusMessage(GstBus *bus, GstMessage *msg, GstVars *vars) {
             gst_structure_get(s, "message", GST_TYPE_MESSAGE, &forward_msg, NULL);
             if (GST_MESSAGE_TYPE(forward_msg) == GST_MESSAGE_EOS) {
                 g_print("EOS from element %s\n", GST_OBJECT_NAME(GST_MESSAGE_SRC(forward_msg)));
-                gst_element_set_state(vars->queueRecord, GST_STATE_NULL);
-                gst_element_set_state(vars->x264enc, GST_STATE_NULL);
-                gst_element_set_state(vars->mkvMux, GST_STATE_NULL);
-                gst_element_set_state(vars->fileSink, GST_STATE_NULL);
+                if (strcmp(GST_OBJECT_NAME(GST_MESSAGE_SRC(forward_msg)), "fileSinkJPEG") == 0) {
+                    gst_element_set_state(vars->queueSnapShot, GST_STATE_NULL);
+                    gst_element_set_state(vars->encSnapShot, GST_STATE_NULL);
+                    gst_element_set_state(vars->fileSinkSnapShot, GST_STATE_NULL);
 
-                gst_bin_remove(GST_BIN(vars->pipeline), vars->queueRecord);
-                gst_bin_remove(GST_BIN(vars->pipeline), vars->x264enc);
-                gst_bin_remove(GST_BIN(vars->pipeline), vars->mkvMux);
-                gst_bin_remove(GST_BIN(vars->pipeline), vars->fileSink);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->queueSnapShot);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->encSnapShot);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->fileSinkSnapShot);
 
-                gst_object_unref(vars->queueRecord);
-                gst_object_unref(vars->x264enc);
-                gst_object_unref(vars->mkvMux);
-                gst_object_unref(vars->fileSink);
+                    gst_object_unref(vars->queueSnapShot);
+                    gst_object_unref(vars->encSnapShot);
+                    gst_object_unref(vars->fileSinkSnapShot);
 
-                gst_element_release_request_pad(vars->tee, vars->teePad);
-                gst_object_unref(vars->teePad);
+                    gst_element_release_request_pad(vars->tee, vars->teePadSnapShot);
+                    gst_object_unref(vars->teePadSnapShot);
+                    _jpegIsWritten = true;
+                }
+                else if (strcmp(GST_OBJECT_NAME(GST_MESSAGE_SRC(forward_msg)), "filesinkVideoRecord") == 0) {
+                    gst_element_set_state(vars->queueRecord, GST_STATE_NULL);
+                    gst_element_set_state(vars->x264enc, GST_STATE_NULL);
+                    gst_element_set_state(vars->mkvMux, GST_STATE_NULL);
+                    gst_element_set_state(vars->fileSink, GST_STATE_NULL);
 
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->queueRecord);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->x264enc);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->mkvMux);
+                    gst_bin_remove(GST_BIN(vars->pipeline), vars->fileSink);
+
+                    gst_object_unref(vars->queueRecord);
+                    gst_object_unref(vars->x264enc);
+                    gst_object_unref(vars->mkvMux);
+                    gst_object_unref(vars->fileSink);
+
+                    gst_element_release_request_pad(vars->tee, vars->teePad);
+                    gst_object_unref(vars->teePad);
+
+                    vars->isRecording = false;
+                }
                 g_main_loop_unref(vars->loop);
 
-                vars->isRecording = false;
             }
             gst_message_unref (forward_msg);
         }
@@ -305,6 +326,16 @@ static GstPadProbeReturn OnUnlink(GstPad *pad, GstPadProbeInfo *info, GstVars *v
     gst_object_unref(sinkpad);
 
     gst_element_send_event(vars->x264enc, gst_event_new_eos());
+
+    return GST_PAD_PROBE_REMOVE;
+}
+
+static GstPadProbeReturn OnUnlinkSnapShot(GstPad *pad, GstPadProbeInfo *info, GstVars *vars) {
+    GstPad *sinkpad = gst_element_get_static_pad(vars->queueSnapShot, "sink");
+    gst_pad_unlink(vars->teePadSnapShot, sinkpad);
+    gst_object_unref(sinkpad);
+
+    gst_element_send_event(vars->encSnapShot, gst_event_new_eos());
 
     return GST_PAD_PROBE_REMOVE;
 }
@@ -434,7 +465,7 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
     _gstVars.queueRecord = gst_element_factory_make("queue", "queueRecord");
     _gstVars.x264enc = gst_element_factory_make("x264enc", NULL);
     _gstVars.mkvMux = gst_element_factory_make("mp4mux", NULL);
-    _gstVars.fileSink = gst_element_factory_make("filesink", NULL);
+    _gstVars.fileSink = gst_element_factory_make("filesink", "filesinkVideoRecord");
     g_object_set(_gstVars.fileSink, "location", _gstVars.recordingFilePath.c_str(), NULL);
     g_object_set(_gstVars.x264enc, "tune", 4, NULL);
     _gstVars.recordingFilePath = "";
@@ -448,7 +479,8 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
     gst_element_sync_state_with_parent(_gstVars.fileSink);
 
     GstPad *sinkpad = gst_element_get_static_pad(_gstVars.queueRecord, "sink");
-    gst_pad_link(_gstVars.teePad, sinkpad);
+    GstPadLinkReturn linkReturn = gst_pad_link(_gstVars.teePad, sinkpad);
+    if (linkReturn == GST_PAD_LINK_OK) g_printerr("Link To Pad ALL Okay");
     gst_object_unref(sinkpad);
 
     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
@@ -467,6 +499,104 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
 void GstWrapper::StopLocalRecord() {
     if (_gstVars.isRecording)
         gst_pad_add_probe(_gstVars.teePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
+}
+
+// Note - this call will not return until the file is written
+//
+// This is to keep SnapShot threadsafe - only one call at a time
+static boost::mutex _snapShotMutex;
+bool GstWrapper::SnapShot(char* filePath, char* fileName) {
+
+    // Bunch of tries with g-streamer - cannot get file to work though equivalent works on the command line
+    if (_gstVars.isPipelineActive == false)
+        return false;
+
+    boost::filesystem::path logPath = boost::filesystem::path(filePath);
+    if (!exists(logPath))
+        if (!create_directories(logPath))
+            return false;
+
+    _snapShotMutex.lock();
+    _jpegIsWritten = false;
+
+    //   This g-streamer seems to work.  It is very important to set snapshot to true.
+    //   Also, you must have set the window to the media controller (which sets the window handler for gstreamr)
+    //   to store JPEGs or video.
+    GstPadTemplate *padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(_gstVars.tee), "src_%u");
+    _gstVars.teePadSnapShot = gst_element_request_pad(_gstVars.tee, padTemplate, NULL, NULL);
+    _gstVars.queueSnapShot = gst_element_factory_make("queue", "queueSnapShot");
+    _gstVars.encSnapShot = gst_element_factory_make("jpegenc", NULL);
+    _gstVars.fileSinkSnapShot = gst_element_factory_make("filesink", "fileSinkJPEG");
+    g_object_set(_gstVars.encSnapShot, "snapshot", 1, NULL);
+    g_object_set(_gstVars.fileSinkSnapShot, "location", logPath.append(std::string(fileName) + ".jpg").generic_string().c_str(), NULL);
+
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(_gstVars.queueSnapShot)), gst_object_ref(_gstVars.encSnapShot), gst_object_ref(_gstVars.fileSinkSnapShot), NULL);
+    gst_element_link_many(_gstVars.queueSnapShot, _gstVars.encSnapShot, _gstVars.fileSinkSnapShot, NULL);
+
+    gst_element_sync_state_with_parent(_gstVars.queueSnapShot);
+    gst_element_sync_state_with_parent(_gstVars.encSnapShot);
+    gst_element_sync_state_with_parent(_gstVars.fileSinkSnapShot);
+
+    GstPad *sinkpad = gst_element_get_static_pad(_gstVars.queueSnapShot, "sink");
+    GstPadLinkReturn linkReturn = gst_pad_link(_gstVars.teePadSnapShot, sinkpad);
+    if (linkReturn != GST_PAD_LINK_OK) {
+        g_printerr("\nLink To Pad FAILED in JPEG snapshot function\n");
+        _snapShotMutex.unlock();
+        return false;
+    }
+    gst_object_unref(sinkpad);
+
+    GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
+    if (bus == NULL) {
+        g_printerr("\nCannot get bus in SnapShot\n\n");
+        _snapShotMutex.unlock();
+        return false;
+    }
+    gst_bus_add_signal_watch(bus);
+    g_signal_connect(G_OBJECT(bus), "message", G_CALLBACK(OnBusMessage), &_gstVars);
+    gst_object_unref(bus);
+
+    // Start the loop to receive bus messages.
+    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
+    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
+
+    // So how do you know if the file is done?  We will actually look for the file, or wait for a timeout
+    //   Even if you timeout, we still want to send an EOS to tear down correctly
+    const int timeoutMs = 5 * 1000;
+    const int sleepTimeMs = 100;
+    int i = 0;
+    for (; i < timeoutMs / sleepTimeMs; i++) {
+        if ((boost::filesystem::exists(logPath) == true) && (boost::filesystem::file_size(logPath)) > 10) {
+            break;
+        }
+        Sleep(sleepTimeMs);
+    }
+    if (i == (timeoutMs / sleepTimeMs)) {
+        g_printerr("Timeout Waiting for JPEG file to exist\n");
+    }
+    
+    // Disconnect from the tee when it is idle, so probe for an idle condition in the tee
+    gst_pad_add_probe(_gstVars.teePadSnapShot, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlinkSnapShot), &_gstVars, nullptr);
+
+    // Now wait for the EOS message in the loop
+    i = 0;
+    for (; i < timeoutMs / sleepTimeMs; i++) {
+        if (_jpegIsWritten == true)
+        {
+            _jpegIsWritten = false;
+            break;
+        }
+        Sleep(sleepTimeMs);
+    }
+
+    if (i == (timeoutMs / sleepTimeMs)) {
+        g_printerr("Timed Out trying to write JPEG\n");
+        _snapShotMutex.unlock();
+        return false;
+    }
+
+    _snapShotMutex.unlock();
+    return true;
 }
 
 void GstWrapper::CreatePipeline() {
@@ -609,7 +739,6 @@ void GstWrapper::CreateAudioRtspPipeline() {
     // Create the bin element and start linking
     LinkBinElements();
 
-    // The RTP pad that connects to the depayloader will be created dynamically.
     // So connect to the pad-added signal and pass the depayloader to link to it.
     g_signal_connect(_gstVars.bin, "pad-added", G_CALLBACK(OnPadAdded), _gstVars.audioDepay);
 

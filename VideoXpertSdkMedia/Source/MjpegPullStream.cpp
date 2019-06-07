@@ -147,3 +147,6 @@ void MjpegPull::Stream::NewRequest(MediaRequest& request) {
 bool MjpegPull::Stream::StartLocalRecording(char* filePath, char* fileName) { return false; }
 
 void MjpegPull::Stream::StopLocalRecording() { }
+
+bool MjpegPull::Stream::SnapShot(char* filePath, char* fileName) { return false; }
+
