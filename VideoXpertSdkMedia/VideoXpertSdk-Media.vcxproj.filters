@@ -32,9 +32,6 @@
     <ClCompile Include="Source\RtspStream.cpp">
       <Filter>Streaming\Rtsp</Filter>
     </ClCompile>
-    <ClCompile Include="Source\RtspKeepAlive.cpp">
-      <Filter>Streaming\Rtsp</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Controller.h">
@@ -81,9 +78,6 @@
       <Filter>Streaming\Bootstrap</Filter>
     </ClInclude>
     <ClInclude Include="Include\RtspCommands.h">
-      <Filter>Streaming\Rtsp</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\RtspKeepAlive.h">
       <Filter>Streaming\Rtsp</Filter>
     </ClInclude>
     <ClInclude Include="Include\RtspMediaDescription.h">

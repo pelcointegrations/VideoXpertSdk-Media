@@ -22,7 +22,7 @@ namespace MediaController {
         /// <param name="stream">The stream instance.</param>
         /// <param name="speed">The playback speed.</param>
         /// <param name="unixTime">The start time for playback.</param>
-        virtual bool Play(StreamBase& stream, float speed, unsigned int unixTime) { return false; }
+        virtual bool Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) { return false; }
 
         /// <summary>
         /// Perform the Pause action based on the stream state.
@@ -59,7 +59,7 @@ namespace MediaController {
         /// Virtual destructor.
         /// </summary>
         virtual ~PlayingState() {}
-        bool Play(StreamBase& stream, float speed, unsigned int unixTime) override;
+        bool Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) override;
         void Pause(StreamBase& stream) override;
         void Stop(StreamBase& stream) override;
         bool GoToLive(StreamBase& stream) override;
@@ -75,7 +75,7 @@ namespace MediaController {
         /// Virtual destructor.
         /// </summary>
         virtual ~PausedState() {}
-        bool Play(StreamBase& stream, float speed, unsigned int unixTime) override;
+        bool Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) override;
         void Stop(StreamBase& stream) override;
         bool GoToLive(StreamBase& stream) override;
     };
@@ -90,7 +90,7 @@ namespace MediaController {
         /// Virtual destructor.
         /// </summary>
         virtual ~StoppedState() {}
-        bool Play(StreamBase& stream, float speed, unsigned int unixTime) override;
+        bool Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) override;
         bool GoToLive(StreamBase& stream) override;
     };
 }

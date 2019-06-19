@@ -3,7 +3,6 @@
 
 #include "StreamBase.h"
 #include "RtspCommands.h"
-#include "RtspKeepAlive.h"
 
 namespace MediaController {
 
@@ -29,20 +28,19 @@ namespace MediaController {
             /// Virtual destructor.
             /// </summary>
             virtual ~Stream();
-            bool Play(float speed = 0, unsigned int unixTime = 0) override;
-            void PlayStream(float speed, unsigned int unixTime) override;
+            bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) override;
+            void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport = kUDP) override;
             void Pause() override;
             void Stop() override;
             bool GoToLive() override;
             void NewRequest(MediaRequest& request) override;
-            bool Resume(float speed = 0, unsigned int unixTime = 0) override;
+            bool Resume(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) override;
             bool StartLocalRecording(char* filePath, char* fileName) override;
             void StopLocalRecording() override;
             bool SnapShot(char* filePath, char* fileName) override;
 
         private:
             Commands* _rtspCommands;
-            std::unique_ptr<KeepAlive> _rtspKeepAlive;
         };
     }
 }

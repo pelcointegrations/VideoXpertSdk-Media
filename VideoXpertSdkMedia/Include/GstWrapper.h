@@ -185,10 +185,21 @@ namespace MediaController {
         /// Clear the pipeline and display window.
         /// </summary>
         void ClearPipeline();
+
+        /// <summary>
+        /// Set the RTSP Transport
+        /// </summary>
+        void SetRtspTransport(IStream::RTSPNetworkTransport transport);
+        IStream::RTSPNetworkTransport  GetRtspTransport();
+
+        /// <summary>
+        /// Set the control URI
+        /// </summary>
+        void SetControlUri(std::string uri);
+
     private:
         static void Init();
         void CreatePipeline();
-        void LinkBinElements();
         GstVars _gstVars;
     };
 }

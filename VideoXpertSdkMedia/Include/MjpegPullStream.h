@@ -27,11 +27,11 @@ namespace MediaController {
             /// Virtual destructor.
             /// </summary>
             virtual ~Stream();
-            bool Play(float speed, unsigned int unixTime) override;
-            void PlayStream(float speed, unsigned int unixTime) override;
+            bool Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
+            void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
             void Pause() override;
             void Stop() override;
-            bool Resume(float speed, unsigned int unixTime) override;
+            bool Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
             bool GoToLive() override;
             void NewRequest(MediaRequest& request) override;
             bool StartLocalRecording(char* filePath, char* fileName) override;

@@ -46,7 +46,7 @@ namespace MediaController {
             /// <summary>
             /// Send the SETUP method and read the server response.
             /// </summary>
-            bool Setup(bool firstAttempt = false);
+            bool Setup(bool useTCP, bool firstAttempt = false);
 
             /// <summary>
             /// Send the PAUSE method and read the server response.
@@ -82,6 +82,8 @@ namespace MediaController {
             /// </summary>
             /// <returns>The session ID.</returns>
             std::string GetSessionId() const { return _sessionId; }
+
+            std::string GetControlUri() const { return _controlUri; }
 
         private:
             void GetSocket(const std::string& uriString, int bindPort);

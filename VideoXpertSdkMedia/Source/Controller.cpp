@@ -28,6 +28,7 @@ namespace MediaController {
 //=======================================================
 
 Controller::Controller(MediaRequest& request) {
+    _transport = kUDP;
     this->stream = StreamFactory::CreateStream(request);
     this->audioStream = StreamFactory::CreateAudioStream(request);
 }
@@ -63,28 +64,33 @@ bool Controller::GoToLive() {
     bool result = true;
     if (this->stream != nullptr) {
         result &= this->stream->state->GoToLive(*this->stream);
-        CallPlayStream(this->stream, 0, 0);
+        CallPlayStream(this->stream, 0, 0, _transport);
     }
 
     if (this->audioStream != nullptr) {
         result &= this->audioStream->state->GoToLive(*this->audioStream);
-        CallPlayStream(this->audioStream, 0, 0);
+        CallPlayStream(this->audioStream, 0, 0, _transport);
     }
 
     return result;
 }
 
-bool Controller::Play(float speed, unsigned int unixTime) {
+bool Controller::Play(float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) {
+    _transport = transport;
+
     // Setup audio stream in new thread
     bool audioResult = true;
     boost::thread* t1 = nullptr;
     if (this->audioStream != nullptr) {
-        t1 = new boost::thread(CallSetupStream, this->audioStream, speed, unixTime, &audioResult);
+        t1 = new boost::thread(CallSetupStream, this->audioStream, speed, unixTime, transport, &audioResult);
     }
 
     // Setup video stream in main thread
     bool videoResult = true;
-    CallSetupStream(this->stream, speed, unixTime, &videoResult);
+    CallSetupStream(this->stream, speed, unixTime, transport, &videoResult);
+
+    // Need to get results from above down to gstreamer for TCP stuff.
+    // this->stream->
 
     // Wait for audio stream to complete
     if (t1 != nullptr)
@@ -96,12 +102,12 @@ bool Controller::Play(float speed, unsigned int unixTime) {
     // Create pipeline for audio stream in new thread
     boost::thread* t2 = nullptr;
     if (audioResult) {
-        t2 = new boost::thread(CallPlayStream, this->audioStream, speed, unixTime);
+        t2 = new boost::thread(CallPlayStream, this->audioStream, speed, unixTime, transport);
     }
 
     // Create pipeline for video stream in main thread
     if (videoResult) {
-        CallPlayStream(this->stream, speed, unixTime);
+        CallPlayStream(this->stream, speed, unixTime, transport);
     }
 
     // Wait for audio stream to complete
@@ -111,18 +117,18 @@ bool Controller::Play(float speed, unsigned int unixTime) {
     return true;
 }
 
-void Controller::PlayStream(float speed, unsigned int unixTime) {
+void Controller::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
 }
 
-void Controller::CallSetupStream(StreamBase* stream, float speed, unsigned int unixTime, bool* result) {
+void Controller::CallSetupStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport, bool* result) {
     if (stream != nullptr) {
-        *result = stream->state->Play(*stream, speed, unixTime);
+        *result = stream->state->Play(*stream, speed, unixTime, transport);
     }
 }
 
-void Controller::CallPlayStream(StreamBase* stream, float speed, unsigned int unixTime) {
+void Controller::CallPlayStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
     if (stream != nullptr) {
-        stream->PlayStream(speed, unixTime);
+        stream->PlayStream(speed, unixTime, transport);
     }
 }
 

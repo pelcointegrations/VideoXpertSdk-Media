@@ -188,7 +188,6 @@
     <ClCompile Include="Source\GstWrapper.cpp" />
     <ClCompile Include="Source\MjpegPullStream.cpp" />
     <ClCompile Include="Source\RtspCommands.cpp" />
-    <ClCompile Include="Source\RtspKeepAlive.cpp" />
     <ClCompile Include="Source\RtspSdpParser.cpp" />
     <ClCompile Include="Source\RtspStream.cpp" />
     <ClCompile Include="Source\stdafx.cpp">
@@ -218,7 +217,6 @@
     <ClInclude Include="Include\GstWrapper.h" />
     <ClInclude Include="Include\MjpegPullStream.h" />
     <ClInclude Include="Include\RtspCommands.h" />
-    <ClInclude Include="Include\RtspKeepAlive.h" />
     <ClInclude Include="Include\RtspMediaDescription.h" />
     <ClInclude Include="Include\RtspResponse.h" />
     <ClInclude Include="Include\RtspSdpParser.h" />

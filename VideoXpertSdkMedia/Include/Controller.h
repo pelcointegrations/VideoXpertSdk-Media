@@ -26,8 +26,8 @@ namespace MediaController {
         virtual ~Controller();
         void SetWindow(void* handle) override;
         bool GoToLive() override;
-        bool Play(float speed, unsigned int unixTime) override;
-        void PlayStream(float speed, unsigned int unixTime) override;
+        bool Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
+        void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
         void Pause() override;
         void Stop() override;
         bool StartLocalRecording(char* filePath, char* fileName) override;
@@ -57,8 +57,11 @@ namespace MediaController {
         StreamBase* audioStream;
 
     private:
-        static void CallSetupStream(StreamBase* stream, float speed, unsigned int unixTime, bool* result);
-        static void CallPlayStream(StreamBase* stream, float speed, unsigned int unixTime);
+        static void CallSetupStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport, bool* result);
+        static void CallPlayStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport);
+
+        // Keep the transport layer around
+        RTSPNetworkTransport _transport;
     };
 }
 #endif // Controller_h__

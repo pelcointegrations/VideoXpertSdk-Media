@@ -11,12 +11,12 @@ using namespace MediaController;
 // PlayingState
 //=======================================================
 
-bool PlayingState::Play(StreamBase& stream, float speed, unsigned int unixTime) {
+bool PlayingState::Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) {
     // Fast forward is not allowed if the stream is currently live so return
     // if it's attempted.
     if (stream.GetMode() == Controller::kLive) {
         if (speed < 0 || unixTime != 0) {
-            return stream.Play(speed, unixTime == 0 ? stream.GetLastTimestamp() : unixTime);
+            return stream.Play(speed, unixTime == 0 ? stream.GetLastTimestamp() : unixTime, transport);
         }
     }
     else {
@@ -47,9 +47,9 @@ bool PlayingState::GoToLive(StreamBase& stream) {
 // PausedState
 //=======================================================
 
-bool PausedState::Play(StreamBase& stream, float speed, unsigned int unixTime) {
+bool PausedState::Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) {
     if (stream.GetMode() == Controller::kLive)
-        return stream.Play(speed, unixTime == 0 ? stream.GetLastTimestamp() : unixTime);
+        return stream.Play(speed, unixTime == 0 ? stream.GetLastTimestamp() : unixTime, transport);
 
     return stream.Resume(speed);
 }
@@ -66,14 +66,14 @@ bool PausedState::GoToLive(StreamBase& stream) {
 // StoppedState
 //=======================================================
 
-bool StoppedState::Play(StreamBase& stream, float speed, unsigned int unixTime) {
+bool StoppedState::Play(StreamBase& stream, float speed, unsigned int unixTime, IStream::RTSPNetworkTransport transport) {
     // Playing from a stopped state assumes the stream starts in live mode.  However,
     // if a negative speed value is given then the stream will be in playback mode since
     // it is playing in reverse from live.
     if (speed < 0 || unixTime != 0)
-        return stream.Play(speed, unixTime == 0 ? Utilities::CurrentUnixTime() : unixTime);
+        return stream.Play(speed, unixTime == 0 ? Utilities::CurrentUnixTime() : unixTime, transport);
 
-    return stream.Play();
+    return stream.Play(0, 0, transport);
 }
 
 bool StoppedState::GoToLive(StreamBase& stream) {

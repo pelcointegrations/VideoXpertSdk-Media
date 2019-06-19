@@ -11,10 +11,8 @@ namespace MediaController {
     /// </summary>
     struct GstVars {
         GstElement *pipeline;
-        GstElement *bin;
         GstElement *src;
-        GstElement *rtcpSrc;
-        GstElement *rtcpSink;
+        GstElement *rtspSrc;
         GstElement *videoDepay;
         GstElement *videoDec;
         GstElement *tee;
@@ -34,9 +32,9 @@ namespace MediaController {
         GstPad *sinkPad;
         GstPad *teePad;
 
-        GstElement * queueSnapShot;
-        GstElement * encSnapShot;
-        GstElement * fileSinkSnapShot;
+        GstElement *queueSnapShot;
+        GstElement *encSnapShot;
+        GstElement *fileSinkSnapShot;
         GstPad *teePadSnapShot;
 
         /// <summary>
@@ -79,6 +77,11 @@ namespace MediaController {
         /// </summary>
         void* eventData;
 
+        /// <summary>
+        /// Store the preferred RSTP transport (for RTSP only).
+        /// </summary>
+        IStream::RTSPNetworkTransport transport;
+
         bool isPipelineActive;
         bool isMjpeg;
         bool isRecording;
@@ -88,6 +91,7 @@ namespace MediaController {
         std::string multicastAddress;
         std::string location;
         std::string recordingFilePath;
+        std::string uriControl;
         gint rtpPort;
         gint rtcpPort;
         gint rtcpSinkPort;

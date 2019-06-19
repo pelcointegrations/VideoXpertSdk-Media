@@ -15,7 +15,7 @@ MjpegPull::Stream::Stream(MediaRequest& request) : StreamBase(request) {
 
 MjpegPull::Stream::~Stream() {}
 
-bool MjpegPull::Stream::Play(float speed, unsigned int unixTime) {
+bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
     if (_dataSession == nullptr)
         return false;
 
@@ -56,7 +56,7 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime) {
     return true;
 }
 
-void MjpegPull::Stream::PlayStream(float speed, unsigned int unixTime) { }
+void MjpegPull::Stream::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { }
 
 void MjpegPull::Stream::Pause() {
     if (_dataSession == nullptr)
@@ -90,7 +90,7 @@ void MjpegPull::Stream::Stop() {
 
 bool MjpegPull::Stream::GoToLive() { return true; }
 
-bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime) {
+bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
     if (_dataSession == nullptr)
         return false;
 

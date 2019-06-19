@@ -19,7 +19,7 @@ StreamBase::~StreamBase() {
 
 }
 
-bool StreamBase::Play(float speed, unsigned int unixTime) { return false; }
+bool StreamBase::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { return false; }
 
 void StreamBase::Pause() {}
 
@@ -27,7 +27,7 @@ void StreamBase::Stop() {}
 
 void StreamBase::NewRequest(MediaRequest& request) {}
 
-bool StreamBase::Resume(float speed, unsigned int unixTime) { return false; }
+bool StreamBase::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { return false; }
 
 bool StreamBase::StartLocalRecording(char* filePath, char* fileName) { return false; }
 

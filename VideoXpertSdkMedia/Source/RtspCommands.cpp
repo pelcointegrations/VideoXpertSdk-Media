@@ -143,7 +143,7 @@ bool Commands::Describe(bool firstAttempt) {
     return true;
 }
 
-bool Commands::Setup(bool firstAttempt) {
+bool Commands::Setup(bool useTCP, bool firstAttempt) {
     // Increment the value for the CSeq field.
     _cSeqNum++;
     MediaDescription md;
@@ -166,12 +166,18 @@ bool Commands::Setup(bool firstAttempt) {
     requestStream << kSetup << kWhitespace << md.controlUri << kWhitespace << kRtspVersion << kOneNewLine;
     requestStream << kHeaderCSeq << kColonSpace << _cSeqNum << kOneNewLine;
     requestStream << kHeaderUserAgent << kColonSpace << kActualUserAgent << kOneNewLine;
-    if (!firstAttempt)
-        requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << (md.isMulticast ? "multicast" : "unicast");
-    else
-        requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << "unicast";
-
-    requestStream << ";client_port=" <<this->_dataPort << "-" <<this->_rtcpPort << kTwoNewLines;
+    if (useTCP == true) {
+        requestStream << kHeaderTransport << kColonSpace << md.protocol << "/TCP" << kSemicolon << "unicast;interleaved=0-1" << kTwoNewLines;
+    } 
+    else {
+        if (!firstAttempt) {
+            requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << (md.isMulticast ? "multicast" : "unicast");
+        }
+        else {
+            requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << "unicast";
+        }
+        requestStream << ";client_port=" << this->_dataPort << "-" << this->_rtcpPort << kTwoNewLines;
+    }
     try { write(_pSocket, request); }
     catch (...) { return false; }
 
@@ -250,12 +256,12 @@ bool Commands::SetupStream(MediaController::GstWrapper* gstwrapper, float speed,
 #endif
         Options();
         Describe();
-        Setup();
-        ret = SetupStream(gstwrapper, speed, unixTime);
+        bool useTCP = (gstwrapper->GetRtspTransport() == MediaController::IController::kRTPOverRTSP) ? true : false;
+        ret = Setup(useTCP);
     }
-    else if (resp.statusCode == kStatusCode200)
+    else if (resp.statusCode == kStatusCode200) {
         return true;
-
+    }
     return ret;
 }
 

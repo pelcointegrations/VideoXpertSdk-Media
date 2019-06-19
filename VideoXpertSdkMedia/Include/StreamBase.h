@@ -19,7 +19,7 @@ namespace MediaController {
         /// Virtual destructor.
         /// </summary>
         virtual ~StreamBase();
-        bool Play(float speed = 0, unsigned int unixTime = 0) override;
+        bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) override;
         void Pause() override;
         void Stop() override;
         void NewRequest(MediaRequest& request) override;
@@ -33,7 +33,8 @@ namespace MediaController {
         /// <param name="speed">The playback speed.  Negative values can be used for reverse
         /// playback. A value of 0 will resume a paused stream.</param>
         /// <param name="unixTime">The start time for playback. A value of 0 will start a live stream.</param>
-        virtual bool Resume(float speed = 0, unsigned int unixTime = 0);
+        /// <param name="transport">Select your transport preference</param>
+        virtual bool Resume(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP);
 
         /// <summary>
         /// Get the current GStreamer wrapper instance.

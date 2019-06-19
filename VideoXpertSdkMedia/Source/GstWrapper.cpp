@@ -19,33 +19,6 @@
 using namespace std;
 using namespace MediaController;
 
-GstPadProbeReturn OnRtcpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, GstVars *vars) {
-    if (GST_PAD_PROBE_INFO_TYPE(info) | GST_PAD_PROBE_TYPE_BUFFER) {
-        GstBuffer *buff = gst_pad_probe_info_get_buffer(info);
-        GstRTCPBuffer rtcp = { nullptr };
-        if (gst_rtcp_buffer_map(buff, GST_MAP_READ, &rtcp)) {
-            guint64 ntptime;
-            GstRTCPPacket packet;
-            gboolean more = gst_rtcp_buffer_get_first_packet(&rtcp, &packet);
-            while (more) {
-                // Check if the packet type is a sender report.
-                GstRTCPType type = gst_rtcp_packet_get_type(&packet);
-                if (type == GST_RTCP_TYPE_SR) {
-                    // Parse the sender info.
-                    gst_rtcp_packet_sr_get_sender_info(&packet, nullptr, &ntptime, nullptr, nullptr, nullptr);
-                    // Convert the timestamp from NTP format to Unix format.
-                    guint64 unixMsTime = gst_rtcp_ntp_to_unix(ntptime);
-                    // Set the rtcpTimestamp value to the unixMsTime converted from milliseconds to seconds.
-                    vars->rtcpTimestamp = static_cast<guint64>(unixMsTime / Constants::kMsInNs);
-                }
-                more = gst_rtcp_packet_move_to_next(&packet);
-            }
-            gst_rtcp_buffer_unmap(&rtcp);
-        }
-    }
-    return GST_PAD_PROBE_OK;
-}
-
 GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, GstVars *vars) {
     if (GST_PAD_PROBE_INFO_TYPE(info) | GST_PAD_PROBE_TYPE_BUFFER) {
         GstBuffer *buff = gst_pad_probe_info_get_buffer(info);
@@ -73,7 +46,8 @@ GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, G
             // Parse the buffer based on the current mode.
             if (vars->mode == MediaController::Controller::kPlayback) {
                 // Playback packets contain extension data, which gives us the stream time.
-                if (gst_rtp_buffer_get_extension_data(&rtp, nullptr, &data, nullptr)) {
+                guint wordLen;
+                if (gst_rtp_buffer_get_extension_data(&rtp, nullptr, &data, &wordLen)) {
                     // Convert the time contained in the extension data from NTP format to Unix format.
                     vars->currentTimestamp = ntohl(*reinterpret_cast<unsigned long*>(data)) - Constants::kNtpToEpochDiffSec;
                     unsigned int curTime = vars->currentTimestamp;
@@ -312,12 +286,24 @@ void OnBusMessage(GstBus *bus, GstMessage *msg, GstVars *vars) {
 }
 
 // Called when rtpbin has validated a payload that we can depayload.
-static void OnPadAdded(GstElement * rtpbin, GstPad * new_pad, GstElement * depay) {
+static void OnPadAddedAudio(GstElement * rtpbin, GstPad * new_pad, GstElement * depay) {
     g_print("New payload on pad: %s\n", GST_PAD_NAME(new_pad));
     GstPad *sinkpad = gst_element_get_static_pad(depay, Constants::kSink);
     g_assert(sinkpad);
     gst_pad_link(new_pad, sinkpad);
     gst_object_unref(sinkpad);
+}
+
+// Called when rtpbin has validated a payload that we can depayload.
+static void OnPadAddedVideo(GstElement * rtpbin, GstPad * new_pad, GstVars * vars) {
+    g_print("New payload on pad: %s\n", GST_PAD_NAME(new_pad));
+    GstPad *sinkpad = gst_element_get_static_pad(vars->videoDepay, Constants::kSink);
+    g_assert(sinkpad);
+    gst_pad_link(new_pad, sinkpad);
+    gst_object_unref(sinkpad);
+
+    // Setup a probe on the Pad for RTP packets (will give time and metadata)
+    gst_pad_add_probe(new_pad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtpPacketReceived), vars, nullptr);
 }
 
 static GstPadProbeReturn OnUnlink(GstPad *pad, GstPadProbeInfo *info, GstVars *vars) {
@@ -608,67 +594,6 @@ void GstWrapper::CreatePipeline() {
     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
     gst_bus_set_sync_handler(bus, (GstBusSyncHandler)create_window, &_gstVars, NULL);
     gst_object_unref(bus);
-
-    // Create the udpsrc.
-    _gstVars.src = gst_element_factory_make(Constants::kUdpSrc, "rtpSrc");
-    g_assert(_gstVars.src);
-    g_object_set(_gstVars.src, Constants::kPort, _gstVars.rtpPort, NULL);
-    if (!_gstVars.multicastAddress.empty())
-        g_object_set(_gstVars.src, Constants::kAddress, _gstVars.multicastAddress.c_str(), NULL);
-
-    // Set the caps on udpsrc.
-    _gstVars.caps = gst_caps_from_string(_gstVars.rtpCaps.c_str());
-    g_object_set(_gstVars.src, Constants::kCaps, _gstVars.caps, NULL);
-    gst_caps_unref(_gstVars.caps);
-
-    // Create the udpsrc for RTCP.
-    _gstVars.rtcpSrc = gst_element_factory_make(Constants::kUdpSrc, "rtcpSrc");
-    g_assert(_gstVars.rtcpSrc);
-    g_object_set(_gstVars.rtcpSrc, Constants::kPort, _gstVars.rtcpPort, NULL);
-
-    // Create the udpsink for RTCP.
-    _gstVars.rtcpSink = gst_element_factory_make(Constants::kUdpSink, "rtcpSink");
-    g_assert(_gstVars.rtcpSink);
-    g_object_set(_gstVars.rtcpSink, Constants::kPort, _gstVars.rtcpSinkPort, Constants::kHost, _gstVars.hostIp.c_str(), NULL);
-    g_object_set(_gstVars.rtcpSink, Constants::kAsync, FALSE, Constants::kSync, FALSE, NULL);
-
-    // Add the elements to the pipeline.
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.src, _gstVars.rtcpSrc, _gstVars.rtcpSink, NULL);
-}
-
-void GstWrapper::LinkBinElements() {
-    // Create the bin element.
-    _gstVars.bin = gst_element_factory_make(Constants::kRtpBin, "rtpBin");
-    g_assert(_gstVars.bin);
-
-    // Add the bin element to the pipeline.
-    gst_bin_add(GST_BIN(_gstVars.pipeline), _gstVars.bin);
-
-    // Start linking elements to the bin, beginning with the RTP sinkPad for session 0.
-    _gstVars.srcPad = gst_element_get_static_pad(_gstVars.src, Constants::kSrc);
-    gst_pad_add_probe(_gstVars.srcPad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtpPacketReceived), &_gstVars, nullptr);
-    _gstVars.sinkPad = gst_element_get_request_pad(_gstVars.bin, "recv_rtp_sink_0");
-    _gstVars.linkReturn = gst_pad_link(_gstVars.srcPad, _gstVars.sinkPad);
-    g_assert(_gstVars.linkReturn == GST_PAD_LINK_OK);
-    gst_object_unref(_gstVars.srcPad);
-    gst_object_unref(_gstVars.sinkPad);
-
-    // Link the RTCP sinkPad for session 0.
-    _gstVars.srcPad = gst_element_get_static_pad(_gstVars.rtcpSrc, Constants::kSrc);
-    gst_pad_add_probe(_gstVars.srcPad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtcpPacketReceived), &_gstVars, nullptr);
-    _gstVars.sinkPad = gst_element_get_request_pad(_gstVars.bin, "recv_rtcp_sink_0");
-    _gstVars.linkReturn = gst_pad_link(_gstVars.srcPad, _gstVars.sinkPad);
-    g_assert(_gstVars.linkReturn == GST_PAD_LINK_OK);
-    gst_object_unref(_gstVars.srcPad);
-    gst_object_unref(_gstVars.sinkPad);
-
-    // Link the RTCP srcPad for session 0.
-    _gstVars.srcPad = gst_element_get_request_pad(_gstVars.bin, "send_rtcp_src_0");
-    _gstVars.sinkPad = gst_element_get_static_pad(_gstVars.rtcpSink, Constants::kSink);
-    _gstVars.linkReturn = gst_pad_link(_gstVars.srcPad, _gstVars.sinkPad);
-    g_assert(_gstVars.linkReturn == GST_PAD_LINK_OK);
-    gst_object_unref(_gstVars.srcPad);
-    gst_object_unref(_gstVars.sinkPad);
 }
 
 void GstWrapper::CreateVideoRtspPipeline(string encoding) {
@@ -686,12 +611,31 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
         videoDepayName = Constants::kRtpMp4vDepay;
         videoDecName = Constants::kRtpMp4vDec;
     }
+    else if (encoding == Constants::kEncodingH265) {
+        videoDepayName = Constants::kRtpH265Depay;
+        videoDecName = Constants::kRtpH265Dec;        
+    }
     else {
+        // Default case: (encoding == Constants::kEncodingH264)        
         videoDepayName = Constants::kRtpH264Depay;
         videoDecName = Constants::kRtpH264Dec;
     }
 
     // Create the depayloader, decoder and video sink.
+    _gstVars.rtspSrc = gst_element_factory_make("rtspsrc", "RTSPSrc");
+    g_assert(_gstVars.rtspSrc);
+    g_object_set(_gstVars.rtspSrc, "location", _gstVars.uriControl.c_str(), NULL);
+    if (_gstVars.transport == MediaController::IController::kUDP) {
+        // Check for multicast
+        if (!_gstVars.multicastAddress.empty()) {
+            // g_object_set(_gstVars.rtspSrc, Constants::kAddress, _gstVars.multicastAddress.c_str(), NULL);
+            g_object_set(_gstVars.rtspSrc, "protocols", 0x2, NULL);
+        }
+    }
+    else {
+        g_object_set(_gstVars.rtspSrc, "protocols", 0x4, NULL);
+    }
+
     _gstVars.videoDepay = gst_element_factory_make(videoDepayName, "videoDepay");
     g_assert(_gstVars.videoDepay);
     _gstVars.videoDec = gst_element_factory_make(videoDecName, "videoDec");
@@ -705,15 +649,12 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
     gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
-
-    // Create the bin element and start linking
-    LinkBinElements();
 
     // The RTP pad that connects to the depayloader will be created dynamically.
     // So connect to the pad-added signal and pass the depayloader to link to it.
-    g_signal_connect(_gstVars.bin, "pad-added", G_CALLBACK(OnPadAdded), _gstVars.videoDepay);
+    g_signal_connect(_gstVars.rtspSrc, "pad-added", G_CALLBACK(OnPadAddedVideo), &_gstVars);
 
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
@@ -724,6 +665,19 @@ void GstWrapper::CreateAudioRtspPipeline() {
     // Create the pipeline.
     CreatePipeline();
 
+    _gstVars.rtspSrc = gst_element_factory_make("rtspsrc", "RTSPSrc");
+    g_assert(_gstVars.rtspSrc);
+    g_object_set(_gstVars.rtspSrc, "location", _gstVars.uriControl.c_str(), NULL);
+    if (_gstVars.transport == MediaController::IController::kUDP) {
+        // Check for multicast
+        if (!_gstVars.multicastAddress.empty()) {
+            // g_object_set(_gstVars.rtspSrc, Constants::kAddress, _gstVars.multicastAddress.c_str(), NULL);
+            g_object_set(_gstVars.rtspSrc, "protocols", 0x2, NULL);
+        }
+    }
+    else {
+        g_object_set(_gstVars.rtspSrc, "protocols", 0x4, NULL);
+    }
     // Create the depayloader, decoder and audio sink.
     _gstVars.audioDepay = gst_element_factory_make(Constants::kRtpAudioDepay, "audioDepay");
     g_assert(_gstVars.audioDepay);
@@ -733,14 +687,11 @@ void GstWrapper::CreateAudioRtspPipeline() {
     g_assert(_gstVars.audioSink);
 
     // Add elements to the pipeline and link.
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.audioDepay, _gstVars.audioDec, _gstVars.audioSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.audioDepay, _gstVars.audioDec, _gstVars.audioSink, NULL);
     gst_element_link_many(_gstVars.audioDepay, _gstVars.audioDec, _gstVars.audioSink, NULL);
 
-    // Create the bin element and start linking
-    LinkBinElements();
-
     // So connect to the pad-added signal and pass the depayloader to link to it.
-    g_signal_connect(_gstVars.bin, "pad-added", G_CALLBACK(OnPadAdded), _gstVars.audioDepay);
+    g_signal_connect(_gstVars.rtspSrc, "pad-added", G_CALLBACK(OnPadAddedAudio), _gstVars.audioDepay);
 
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
     g_print("Starting RTP audio receiver pipeline.\n");
@@ -817,4 +768,19 @@ void GstWrapper::ClearPipeline() {
     gst_object_unref(_gstVars.pipeline);
     _gstVars.isPipelineActive = false;
     _gstVars.lastTimestamp = NULL;
+}
+
+void GstWrapper::SetRtspTransport(MediaController::IStream::RTSPNetworkTransport transport)
+{
+    _gstVars.transport = transport;
+}
+
+MediaController::IStream::RTSPNetworkTransport  GstWrapper::GetRtspTransport()
+{
+    return _gstVars.transport;
+}
+
+void GstWrapper::SetControlUri(string uri)
+{
+    _gstVars.uriControl = uri;
 }

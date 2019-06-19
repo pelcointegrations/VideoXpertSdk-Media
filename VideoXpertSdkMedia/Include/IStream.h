@@ -25,6 +25,18 @@ namespace MediaController {
         };
 
         /// <summary>
+        ///  This value is used to choose the transport protocol for RTSP streams
+        ///     It is ignored for JPEG pull or other protocols.
+        /// </summary>
+        enum RTSPNetworkTransport {
+            /// <summary> use UDP </summary>
+            kUDP,
+            
+            /// <summary> try to use TCP </summary>
+            kRTPOverRTSP
+        };
+
+        /// <summary>
         /// Virtual destructor.
         /// </summary>
         virtual ~IStream() {}
@@ -35,9 +47,9 @@ namespace MediaController {
         /// <param name="speed">The playback speed.  Negative values can be used for reverse
         /// playback. A value of 0 will resume a paused stream.</param>
         /// <param name="unixTime">The start time for playback. A value of 0 will start a live stream.</param>
-        virtual bool Play(float speed = 0, unsigned int unixTime = 0) = 0;
+        virtual bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) = 0;
         
-        virtual void PlayStream(float speed, unsigned int unixTime) = 0;
+        virtual void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport = kUDP) = 0;
 
         /// <summary>
         /// Starts recording the current video stream to a local file.

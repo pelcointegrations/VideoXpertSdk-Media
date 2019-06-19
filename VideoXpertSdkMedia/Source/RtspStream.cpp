@@ -13,17 +13,21 @@ using namespace VxSdk;
 
 Rtsp::Stream::Stream(MediaRequest& request, bool isVideo) :
     StreamBase(request),
-    _rtspCommands(new Commands(request.dataInterface.dataEndpoint, isVideo)),
-    _rtspKeepAlive() {
+    _rtspCommands(new Commands(request.dataInterface.dataEndpoint, isVideo))
+{
 }
 
 Rtsp::Stream::~Stream() {
-    this->_rtspKeepAlive.reset(nullptr);
     delete _rtspCommands;
     _rtspCommands = nullptr;
 }
 
-bool Rtsp::Stream::Play(float speed, unsigned int unixTime) {
+bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
+    if ((this->_mediaRequest.dataInterface.supportsMulticast == true) && (transport != RTSPNetworkTransport::kUDP)) {
+        return false;
+    }
+    _gst->SetRtspTransport(transport);
+    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
     if (this->_gst->GetMode() != IController::kStopped)
         this->Stop();
 
@@ -39,7 +43,8 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime) {
     if (!this->_rtspCommands->Describe(true))
         return false;
 
-    if (!this->_rtspCommands->Setup(true))
+    bool useTCP = (transport == RTSPNetworkTransport::kRTPOverRTSP) ? true : false;
+    if (!this->_rtspCommands->Setup(useTCP, true))
         return false;
 
     if (this->_rtspCommands->SetupStream(this->_gst, speed, unixTime))
@@ -48,13 +53,11 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime) {
     return false;
 }
 
-void Rtsp::Stream::PlayStream(float speed, unsigned int unixTime) {
+void Rtsp::Stream::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
+    _gst->SetRtspTransport(transport);
+    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
     this->_rtspCommands->PlayStream(this->_gst);
     this->_gst->Play(speed == 0 ? 1 : speed);
-
-    // Start the keep alive loop in a new thread.
-    if (!this->_rtspKeepAlive)
-        this->_rtspKeepAlive = make_unique<KeepAlive>(this->_rtspCommands, this->observerList);
 
     this->state = new PlayingState();
 }
@@ -67,9 +70,6 @@ void Rtsp::Stream::Pause() {
 }
 
 void Rtsp::Stream::Stop() {
-    // Signal the keep alive thread to shut down.
-    this->_rtspKeepAlive.reset();
-    this->_rtspCommands->Teardown();
     this->_gst->ClearPipeline();
     this->_gst->SetMode(IController::kStopped);
     this->state = new StoppedState();
@@ -77,7 +77,9 @@ void Rtsp::Stream::Stop() {
 
 bool Rtsp::Stream::GoToLive() { return true; }
 
-bool Rtsp::Stream::Resume(float speed, unsigned int unixTime) {
+bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
+    _gst->SetRtspTransport(transport);
+    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
     bool ret = this->_rtspCommands->SetupStream(this->_gst, speed, unixTime);
     if (ret)
         this->_rtspCommands->PlayStream(this->_gst);
