@@ -23,7 +23,16 @@ namespace MediaController {
         /// </summary>
         Type eventType;
 
+        /// <summary>
+        /// Special opaque metadata for future use
+        /// </summary>
         unsigned char pelcoData[500];
+
+        /// <summary>
+        /// The event data assigned by caller during event subscription.
+        /// </summary>
+        void* eventData;
+
     };
 }
 #endif // PelcoDataEvent_h__

@@ -196,6 +196,8 @@ namespace MediaController {
         /// Set the control URI
         /// </summary>
         void SetControlUri(std::string uri);
+       
+        bool SetOverlayString(std::string stringToOverlay, MediaController::IController::VideoOverlayDataPosition position, bool inludeDateTime);
 
     private:
         static void Init();

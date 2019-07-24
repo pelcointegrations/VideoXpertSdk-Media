@@ -117,7 +117,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -135,7 +135,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -158,7 +158,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -181,7 +181,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -229,12 +229,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\VideoXpertSdk.3.0.4\build\native\VideoXpertSdk.targets" Condition="Exists('packages\VideoXpertSdk.3.0.4\build\native\VideoXpertSdk.targets')" />
+    <Import Project="packages\VideoXpertSdk.3.0.5\build\native\VideoXpertSdk.targets" Condition="Exists('packages\VideoXpertSdk.3.0.5\build\native\VideoXpertSdk.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\VideoXpertSdk.3.0.4\build\native\VideoXpertSdk.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\VideoXpertSdk.3.0.4\build\native\VideoXpertSdk.targets'))" />
+    <Error Condition="!Exists('packages\VideoXpertSdk.3.0.5\build\native\VideoXpertSdk.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\VideoXpertSdk.3.0.5\build\native\VideoXpertSdk.targets'))" />
   </Target>
 </Project>

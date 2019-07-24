@@ -260,6 +260,9 @@ bool Commands::SetupStream(MediaController::GstWrapper* gstwrapper, float speed,
         ret = Setup(useTCP);
     }
     else if (resp.statusCode == kStatusCode200) {
+        // In this case, which only happens when starting the same stream from a different time, you will want to stop 
+        //  the stream that is playing now, and set the new control uri for the rtsp stream
+        Teardown();
         return true;
     }
     return ret;

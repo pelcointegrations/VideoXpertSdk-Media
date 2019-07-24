@@ -237,3 +237,11 @@ bool Controller::IsPipelineActive() {
         return this->stream->GetGstreamer()->IsPipelineActive();
     return false;
 }
+
+bool Controller::AddVideoOverlayData(std::string overlayData, VideoOverlayDataPosition position, bool includeDateTime) {
+    if (this->stream != nullptr) {
+        return this->stream->GetGstreamer()->SetOverlayString(overlayData, position, includeDateTime);
+    }
+    return false;
+}
+

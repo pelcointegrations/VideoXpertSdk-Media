@@ -13,7 +13,8 @@ using namespace VxSdk;
 
 Rtsp::Stream::Stream(MediaRequest& request, bool isVideo) :
     StreamBase(request),
-    _rtspCommands(new Commands(request.dataInterface.dataEndpoint, isVideo))
+    _rtspCommands(new Commands(request.dataInterface.dataEndpoint, isVideo)),
+    _startUrl(request.dataInterface.dataEndpoint)
 {
 }
 
@@ -35,6 +36,9 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport
         this->_gst->SetMode(IController::kLive);
     else
         this->_gst->SetMode(IController::kPlayback);
+
+    // Reset to the base URI 
+    this->_rtspCommands->ResetPath(_startUrl);
 
     // Send the sequence of RTSP commands needed to start a new stream.
     if (!this->_rtspCommands->Options())

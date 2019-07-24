@@ -45,6 +45,7 @@ namespace MediaController {
         Mode GetMode() override;
         bool IsPipelineActive() override;
         void AddEventData(void* customData) override;
+        bool AddVideoOverlayData(std::string overlayData, VideoOverlayDataPosition position, bool inlcudeDateTime) override;
 
         /// <summary>
         /// The current video stream instance.

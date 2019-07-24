@@ -5,6 +5,7 @@
 #include <gst/rtp/gstrtcpbuffer.h>
 #include <gst/rtp/gstrtpbuffer.h>
 #include <gst/video/video.h>
+#include <gst/rtsp/gstrtsp.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
@@ -18,6 +19,24 @@
 
 using namespace std;
 using namespace MediaController;
+
+void AddTextDateTimeOverlay(GstVars *vars, unsigned int unixTime)
+{
+    if (vars->includeDateTimeInOverlay == true)
+    {
+        // The time is universal time, convert to local time
+        tm timeStruct = { 0 };
+        time_t timeIn = unixTime;
+        localtime_s(&timeStruct, &timeIn);
+
+        stringstream timeStream;
+        timeStream << put_time(&timeStruct, vars->stringToOverlay.c_str());
+        g_object_set(vars->textOverlay, "text", timeStream.str().c_str(), NULL);
+        g_object_set(vars->textOverlay, "valignment", vars->overlayPositionV, NULL);
+        g_object_set(vars->textOverlay, "halignment", vars->overlayPositionH, NULL);
+    }
+
+}
 
 GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, GstVars *vars) {
     if (GST_PAD_PROBE_INFO_TYPE(info) | GST_PAD_PROBE_TYPE_BUFFER) {
@@ -37,6 +56,7 @@ GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, G
                 for (size_t i = 0; i < vars->pelcoDataObserverList.size(); i++) {
                     PelcoDataEvent* newEvent = new PelcoDataEvent();
                     newEvent->eventType = newEvent->kUnknown;
+                    newEvent->eventData = vars->eventData;
                     memcpy(newEvent->pelcoData, testPtr, (payloadSize > sizeof(newEvent->pelcoData)) ? sizeof(newEvent->pelcoData) : payloadSize);
                     vars->pelcoDataObserverList[i](newEvent);
                     delete newEvent;
@@ -51,10 +71,18 @@ GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, G
                     // Convert the time contained in the extension data from NTP format to Unix format.
                     vars->currentTimestamp = ntohl(*reinterpret_cast<unsigned long*>(data)) - Constants::kNtpToEpochDiffSec;
                     unsigned int curTime = vars->currentTimestamp;
+
+                    // get fracationpart
+                    unsigned long fraction = ntohl(*(reinterpret_cast<unsigned long*>(data) + 1));
+                    unsigned long long divisor = (unsigned long long)1 << 32;
+                    double fractionalSeconds = (double)fraction / (double)divisor;
+
+                    AddTextDateTimeOverlay(vars, curTime);
                     // Send the timestamp event to all observers.
                     for (size_t i = 0; i < vars->observerList.size(); i++) {
                         TimestampEvent* newEvent = new TimestampEvent();
                         newEvent->unixTime = curTime;
+                        newEvent->unixTimeMicroSeconds = (unsigned int)((fractionalSeconds * 1000 * 1000) + 0.5);
                         newEvent->eventData = vars->eventData;
                         vars->observerList[i](newEvent);
                         delete newEvent;
@@ -90,10 +118,13 @@ GstPadProbeReturn OnRtpPacketReceived(GstPad *localPad, GstPadProbeInfo *info, G
                             if (rtcpTsMs - ms == vars->rtcpTimestamp)
                                 vars->rtcpTimestamp = rtcpTsMs;
 
+                            unsigned int unixTime = static_cast<unsigned int>(rtcpTsMs / Constants::kMillisecondsInt);
+                            AddTextDateTimeOverlay(vars, unixTime);
                             // Send the timestamp event to all observers.
                             for (size_t i = 0; i < vars->observerList.size(); i++) {
                                 TimestampEvent* newEvent = new TimestampEvent();
-                                newEvent->unixTime = static_cast<unsigned int>(rtcpTsMs / Constants::kMillisecondsInt);
+                                newEvent->unixTime = unixTime;
+                                newEvent->unixTimeMicroSeconds = 0;
                                 newEvent->eventData = vars->eventData;
                                 vars->observerList[i](newEvent);
                                 delete newEvent;
@@ -194,6 +225,7 @@ GstPadProbeReturn OnJpegPacketReceived(GstPad *localPad, GstPadProbeInfo *info, 
             vars->currentTimestamp = static_cast<unsigned long>(unixTime);
             vars->lastTimestamp = static_cast<uint32_t>(unixTime);
         }
+        AddTextDateTimeOverlay(vars, vars->currentTimestamp);
     }
     return GST_PAD_PROBE_OK;
 }
@@ -306,6 +338,48 @@ static void OnPadAddedVideo(GstElement * rtpbin, GstPad * new_pad, GstVars * var
     gst_pad_add_probe(new_pad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtpPacketReceived), vars, nullptr);
 }
 
+static gboolean OnBeforeSend(GstElement * rtspsrc, GstRTSPMessage * message, GstVars * vars)
+{
+    if (message->type == GST_RTSP_MESSAGE_REQUEST)  {
+        if (message->type_data.request.method == GST_RTSP_PLAY)
+        {
+            // May need to add a scale
+            //   Figure this out by looking at the command URI
+            //  if it has scale, or a time, then set those header values
+            // e.g. "...=false&time=1562874600000&scale=-8.0"
+            string uri = message->type_data.request.uri;
+
+            size_t indexStart = uri.find("&time=", 0);
+            if (indexStart != string::npos) {
+                size_t timeEnd = uri.find("&", indexStart + 6);
+                if (timeEnd == string::npos) {
+                    timeEnd = uri.length();
+                }
+                unsigned long long time = 0;
+                stringstream timeStream(uri.substr(indexStart + 6, timeEnd - indexStart));
+                timeStream >> time;
+                time /= 1000;
+                string timeStr = Utilities::UnixTimeToRfc3339((unsigned) time);
+                string range = "clock=";
+                range += timeStr.c_str();
+                gst_rtsp_message_remove_header(message, GST_RTSP_HDR_RANGE, -1);
+                gst_rtsp_message_add_header(message, GST_RTSP_HDR_RANGE, range.c_str());
+            }
+
+            indexStart = uri.find("&scale=");
+            if (indexStart != string::npos) {
+                size_t scaleEnd = uri.find("&", indexStart + 7);
+                if (scaleEnd == string::npos) {
+                    scaleEnd = uri.length();
+                }
+                gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, uri.substr(indexStart + 7, scaleEnd - indexStart).c_str());
+
+            }
+        }
+    }
+    return true;
+}
+
 static GstPadProbeReturn OnUnlink(GstPad *pad, GstPadProbeInfo *info, GstVars *vars) {
     GstPad *sinkpad = gst_element_get_static_pad(vars->queueRecord, "sink");
     gst_pad_unlink(vars->teePad, sinkpad);
@@ -343,6 +417,10 @@ GstWrapper::GstWrapper() {
     Init();
     _gstVars.isRecording = false;
     _gstVars.isPipelineActive = false;
+    _gstVars.includeDateTimeInOverlay = false;
+    _gstVars.stringToOverlay.clear();
+    _gstVars.overlayPositionV = 0;
+    _gstVars.overlayPositionH = 0;
 }
 
 GstWrapper::~GstWrapper() { }
@@ -466,7 +544,6 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
 
     GstPad *sinkpad = gst_element_get_static_pad(_gstVars.queueRecord, "sink");
     GstPadLinkReturn linkReturn = gst_pad_link(_gstVars.teePad, sinkpad);
-    if (linkReturn == GST_PAD_LINK_OK) g_printerr("Link To Pad ALL Okay");
     gst_object_unref(sinkpad);
 
     GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
@@ -640,6 +717,14 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     g_assert(_gstVars.videoDepay);
     _gstVars.videoDec = gst_element_factory_make(videoDecName, "videoDec");
     g_assert(_gstVars.videoDec);
+    _gstVars.textOverlay = gst_element_factory_make("textoverlay", "RTSPTextOverlay");
+    g_assert(_gstVars.textOverlay);
+    if ((_gstVars.includeDateTimeInOverlay == false) && (_gstVars.stringToOverlay.length() != 0))
+    {
+        g_object_set(_gstVars.textOverlay, "text", _gstVars.stringToOverlay.c_str(), NULL);
+        g_object_set(_gstVars.textOverlay, "valignment", _gstVars.overlayPositionV, NULL);
+        g_object_set(_gstVars.textOverlay, "halignment", _gstVars.overlayPositionH, NULL);
+    }
     _gstVars.tee = gst_element_factory_make("tee", "tee");
     g_assert(_gstVars.tee);
     _gstVars.queueView = gst_element_factory_make("queue", "queueView");
@@ -649,12 +734,14 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
-    gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.videoDepay, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
 
     // The RTP pad that connects to the depayloader will be created dynamically.
     // So connect to the pad-added signal and pass the depayloader to link to it.
     g_signal_connect(_gstVars.rtspSrc, "pad-added", G_CALLBACK(OnPadAddedVideo), &_gstVars);
+
+    g_signal_connect(_gstVars.rtspSrc, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
 
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
@@ -721,14 +808,22 @@ void GstWrapper::CreateMjpegPipeline() {
     // Create the decoder and video sink.
     _gstVars.videoDec = gst_element_factory_make(Constants::kJpegDec, "videoDec");
     g_assert(_gstVars.videoDec);
+    _gstVars.textOverlay = gst_element_factory_make("textoverlay", "RTSPTextOverlay");
+    g_assert(_gstVars.textOverlay);
+    if ((_gstVars.includeDateTimeInOverlay == false) && (_gstVars.stringToOverlay.length() != 0))
+    {
+        g_object_set(_gstVars.textOverlay, "text", _gstVars.stringToOverlay.c_str(), NULL);
+        g_object_set(_gstVars.textOverlay, "valignment", _gstVars.overlayPositionV, NULL);
+        g_object_set(_gstVars.textOverlay, "halignment", _gstVars.overlayPositionH, NULL);
+    }
     _gstVars.videoConvert = gst_element_factory_make(Constants::kVideoConvert, "videoConvert");
     g_assert(_gstVars.videoConvert);
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
 
     // Add elements to the pipeline and link.
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.src, _gstVars.videoDec, _gstVars.videoConvert, _gstVars.videoSink, NULL);
-    gst_element_link_many(_gstVars.src, _gstVars.videoDec, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.src, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.videoConvert, _gstVars.videoSink, NULL);
+    gst_element_link_many(_gstVars.src, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.videoConvert, _gstVars.videoSink, NULL);
 
     // Add a probe to souphttpsrc.
     GstPad *httpsrcpad = gst_element_get_static_pad(_gstVars.src, Constants::kSrc);
@@ -783,4 +878,69 @@ MediaController::IStream::RTSPNetworkTransport  GstWrapper::GetRtspTransport()
 void GstWrapper::SetControlUri(string uri)
 {
     _gstVars.uriControl = uri;
+}
+
+bool GstWrapper::SetOverlayString(string stringToOverlay, MediaController::IController::VideoOverlayDataPosition position, bool includeDateTime)
+{
+    if (stringToOverlay.length() == 0)
+    {
+        _gstVars.stringToOverlay.clear();
+        _gstVars.includeDateTimeInOverlay = false;
+        return true;
+    }
+
+    _gstVars.stringToOverlay = stringToOverlay;
+    switch (position)
+    {
+        case MediaController::IController::kTopLeft:
+            _gstVars.overlayPositionV = 2;
+            _gstVars.overlayPositionH = 0;
+            break;
+        case MediaController::IController::kTopCenter:
+            _gstVars.overlayPositionV = 2;
+            _gstVars.overlayPositionH = 1;
+            break;
+        case MediaController::IController::kTopRight:
+            _gstVars.overlayPositionV = 2;
+            _gstVars.overlayPositionH = 2;
+            break;
+        case MediaController::IController::kMiddleLeft:
+            _gstVars.overlayPositionV = 4;
+            _gstVars.overlayPositionH = 0;
+            break;
+        case MediaController::IController::kMiddleCenter:
+            _gstVars.overlayPositionV = 4;
+            _gstVars.overlayPositionH = 1;
+            break;
+        case MediaController::IController::kMiddleRight:
+            _gstVars.overlayPositionV = 4;
+            _gstVars.overlayPositionH = 2;
+            break;
+        case MediaController::IController::kBottomLeft:
+            _gstVars.overlayPositionV = 1;
+            _gstVars.overlayPositionH = 0;
+            break;
+        case MediaController::IController::kBottomCenter:
+            _gstVars.overlayPositionV = 1;
+            _gstVars.overlayPositionH = 1;
+            break;
+        case MediaController::IController::kBottomRight:
+            _gstVars.overlayPositionV = 1;
+            _gstVars.overlayPositionH = 2;
+            break;
+    }
+
+    _gstVars.includeDateTimeInOverlay = includeDateTime;
+
+    // If we already streaming, and this does not contain a date time, then change it here
+    if ((_gstVars.isPipelineActive == true)  && (_gstVars.textOverlay != nullptr))
+    {
+        if (_gstVars.includeDateTimeInOverlay == false)
+        {
+            g_object_set(_gstVars.textOverlay, "valignment", _gstVars.overlayPositionV, NULL);
+            g_object_set(_gstVars.textOverlay, "halignment", _gstVars.overlayPositionH, NULL);
+            g_object_set(_gstVars.textOverlay, "text", _gstVars.stringToOverlay.c_str(), NULL);
+        }
+    }
+    return true;
 }

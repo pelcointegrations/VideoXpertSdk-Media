@@ -5,6 +5,7 @@
 #include "TimestampEvent.h"
 #include "StreamEvent.h"
 #include "PelcoDataEvent.h"
+#include <string>
 
 namespace MediaController {
 
@@ -99,6 +100,27 @@ namespace MediaController {
         /// </summary>
         /// <returns>True if pipeline is active, otherwise false.</returns>
         virtual bool IsPipelineActive() = 0;
+
+        /// <summary>
+        /// Allows you to place data on the video being played
+        ///  If 'includeDateTime' is true, then you can use a format string as in
+        ///  the "put_time" funciton in the c++ standard library.  
+        ///    e.g.  %Y-%m-%dT%H:%M:%S in a string will print
+        ///    2011-07-11T12:15:33
+        /// </summary>
+        /// <returns>True if data can be displayed (there is a limit to string size)</returns>
+        enum VideoOverlayDataPosition {
+            kTopLeft,
+            kTopCenter,
+            kTopRight,
+            kMiddleLeft,
+            kMiddleCenter,
+            kMiddleRight,
+            kBottomLeft,
+            kBottomCenter,
+            kBottomRight
+        };
+        virtual bool AddVideoOverlayData(std::string overlayData, VideoOverlayDataPosition position, bool includeDateTime) = 0;
     };
 }
 #endif // IController_h_

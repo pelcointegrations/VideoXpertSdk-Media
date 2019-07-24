@@ -41,6 +41,7 @@ namespace MediaController {
 
         private:
             Commands* _rtspCommands;
+            std::string _startUrl;
         };
     }
 }

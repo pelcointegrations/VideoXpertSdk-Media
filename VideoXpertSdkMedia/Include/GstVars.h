@@ -15,6 +15,7 @@ namespace MediaController {
         GstElement *rtspSrc;
         GstElement *videoDepay;
         GstElement *videoDec;
+        GstElement *textOverlay;
         GstElement *tee;
         GstElement *queueView;
         GstElement *videoConvert;
@@ -36,6 +37,11 @@ namespace MediaController {
         GstElement *encSnapShot;
         GstElement *fileSinkSnapShot;
         GstPad *teePadSnapShot;
+
+        bool includeDateTimeInOverlay;
+        std::string stringToOverlay;
+        int overlayPositionH;
+        int overlayPositionV;
 
         /// <summary>
         /// The list of timestamp event observers.
