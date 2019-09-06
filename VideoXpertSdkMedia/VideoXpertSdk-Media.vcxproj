@@ -57,27 +57,39 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
     <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -117,7 +129,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -135,7 +147,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -158,7 +170,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -181,10 +193,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;gstrtsp-1.0.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtsp.cpp" />
+    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspext.cpp" />
+    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspsrc.cpp" />
     <ClCompile Include="Source\GstWrapper.cpp" />
     <ClCompile Include="Source\MjpegPullStream.cpp" />
     <ClCompile Include="Source\RtspCommands.cpp" />
@@ -229,12 +244,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\VideoXpertSdk.3.0.6\build\native\VideoXpertSdk.targets" Condition="Exists('packages\VideoXpertSdk.3.0.6\build\native\VideoXpertSdk.targets')" />
+    <Import Project="packages\VideoXpertSdk.3.0.8\build\native\VideoXpertSdk.targets" Condition="Exists('packages\VideoXpertSdk.3.0.8\build\native\VideoXpertSdk.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\VideoXpertSdk.3.0.6\build\native\VideoXpertSdk.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\VideoXpertSdk.3.0.6\build\native\VideoXpertSdk.targets'))" />
+    <Error Condition="!Exists('packages\VideoXpertSdk.3.0.8\build\native\VideoXpertSdk.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\VideoXpertSdk.3.0.8\build\native\VideoXpertSdk.targets'))" />
   </Target>
 </Project>

@@ -45,12 +45,16 @@ bool Commands::Options() {
     requestStream << kHeaderCSeq << kColonSpace << _cSeqNum << kOneNewLine;
     requestStream << kHeaderUserAgent << kColonSpace << kActualUserAgent << kTwoNewLines;
     try { write(_pSocket, request); }
-    catch (...) { return false; }
+    catch (...) { 
+        g_printerr("Cannot write to socket in OPTIONS");
+        return false;
+    }
 
     // Parse the server response.
     Response resp;
     try { resp = ProcessResponse(_pSocket); }
-    catch (...) { return false; }
+    catch (...) { 
+        return false; }
     if (resp.statusCode == kStatusCode301 || resp.statusCode == kStatusCode302) {
         // Set the playback URI to the redirect location.
         typedef std::map<std::string, std::string>::iterator it_type;
@@ -65,7 +69,10 @@ bool Commands::Options() {
         }
     }
     
-    if (resp.statusCode != kStatusCode200) { return false; }
+    if (resp.statusCode != kStatusCode200) { 
+        g_printerr("NON 200 return code in Options:  %d\n", resp.statusCode);
+        return false; 
+    }
     
     return true;
 }
@@ -87,13 +94,22 @@ bool Commands::GetParameter() {
     requestStream << kHeaderUserAgent << kColonSpace << kActualUserAgent << kOneNewLine;
     requestStream << kHeaderSession << kColonSpace << _sessionId << kTwoNewLines;
     try { write(_pSocket, request); }
-    catch (...) { return false; }
+    catch (...) {
+        g_printerr("Cannot write to socket in GetParamter");
+        return false;
+    }
 
     // Parse the server response.
     Response resp;
     try { resp = ProcessResponse(_pSocket); }
-    catch (...) { return false; }
-    if (resp.statusCode != kStatusCode200) { return false; }
+    catch (...) {
+        g_printerr("Problem in ProcessResponse in GetParameter\n");
+        return false; 
+    }
+    if (resp.statusCode != kStatusCode200) { 
+        g_printerr("NON 200 return code in GetParameter:  %d\n", resp.statusCode);
+        return false;
+    }
 
     return true;
 }
@@ -120,8 +136,14 @@ bool Commands::Describe(bool firstAttempt) {
     // Parse the server response.
     Response resp;
     try { resp = ProcessResponse(_pSocket); }
-    catch (...) { return false; }
-    if (resp.statusCode != kStatusCode200) { return false; }
+    catch (...) {
+        g_printerr("Cannot write to socket in DESCRIBE");
+        return false;
+    }
+    if (resp.statusCode != kStatusCode200) { 
+        g_printerr("NON 200 return code in Describe:  %d\n", resp.statusCode);
+        return false;
+    }
     // Parse the session description information.
     SdpParser& parser = this->_sdp;
     parser.Parse(resp.content);
@@ -179,13 +201,19 @@ bool Commands::Setup(bool useTCP, bool firstAttempt) {
         requestStream << ";client_port=" << this->_dataPort << "-" << this->_rtcpPort << kTwoNewLines;
     }
     try { write(_pSocket, request); }
-    catch (...) { return false; }
+    catch (...) {
+        g_printerr("Cannot write to socket in SETUP");
+        return false;
+    }
 
     // Parse the server response.
     Response resp;
     try { resp = ProcessResponse(_pSocket); }
     catch (...) { return false; }
-    if (resp.statusCode != kStatusCode200) { return false; }
+    if (resp.statusCode != kStatusCode200) { 
+        g_printerr("NON 200 return code in SETUP:  %d\n", resp.statusCode);
+        return false;
+    }
     // Set the session ID using the UUID obtained from the server response.
     this->_sessionId = GetSessionUuid(resp.session);
 
@@ -225,7 +253,10 @@ bool Commands::SetupStream(MediaController::GstWrapper* gstwrapper, float speed,
     requestStream << kHeaderSession << kColonSpace << this->_sessionId << kTwoNewLines;
     
     try { write(_pSocket, request); }
-    catch (...) { return false; }
+    catch (...) {
+        g_printerr("Cannot write to socket in PLAY");
+        return false;
+    }
 
     // Parse the server response.
     Response resp;
@@ -265,10 +296,14 @@ bool Commands::SetupStream(MediaController::GstWrapper* gstwrapper, float speed,
         Teardown();
         return true;
     }
+    else {
+        g_printerr("NON 200 return code in PLAY:  %d\n", resp.statusCode);
+        return ret;
+    }
     return ret;
 }
 
-void Commands::PlayStream(MediaController::GstWrapper* gstwrapper) {
+void Commands::PlayStream(MediaController::GstWrapper* gstwrapper, float speed, unsigned int unixTime) {
     if (!gstwrapper->IsPipelineActive()) {
         // Update the pipeline using the description generated above.
         gstwrapper->SetPorts(this->_dataPort, this->_rtcpPort);
@@ -282,7 +317,7 @@ void Commands::PlayStream(MediaController::GstWrapper* gstwrapper) {
                 md.encoding = "JPEG";
 
             gstwrapper->SetCaps("video" + BuildGstCaps(md));
-            gstwrapper->CreateVideoRtspPipeline(md.encoding);
+            gstwrapper->CreateVideoRtspPipeline(md.encoding, speed, unixTime);
         }
         else {
             MediaDescription md = this->_sdp.GetFirstAudio();
@@ -312,7 +347,10 @@ void Commands::Pause() {
     requestStream << kHeaderUserAgent << kColonSpace << kActualUserAgent << kOneNewLine;
     requestStream << kHeaderSession << kColonSpace << this->_sessionId << kTwoNewLines;
     try { write(_pSocket, request); }
-    catch (...) { return; }
+    catch (...) {
+        g_printerr("Cannot write to socket in PAUSE\n");
+        return;
+    }
 
     // Parse the server response.
     try { ProcessResponse(_pSocket); }
@@ -337,7 +375,10 @@ void Commands::Teardown() {
     requestStream << kHeaderSession << kColonSpace << this->_sessionId << kTwoNewLines;
 
     try { write(_pSocket, request); }
-    catch (...) { return; }
+    catch (...) {
+        g_printerr("Cannot write to socket in TEARDOWN");
+        return;
+    }
 
     // Parse the server response.
     try { ProcessResponse(_pSocket); }

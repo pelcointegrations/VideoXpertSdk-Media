@@ -27,6 +27,7 @@ namespace MediaController {
         GstElement *x264enc;
         GstElement *mkvMux;
         GstElement *fileSink;
+        GstElement *rtpBinManager;
         GstCaps *caps;
         GstPadLinkReturn linkReturn;
         GstPad *srcPad;
@@ -42,6 +43,11 @@ namespace MediaController {
         std::string stringToOverlay;
         int overlayPositionH;
         int overlayPositionV;
+
+        /// <summary>
+        /// The list of StreamEvent observers.
+        /// </summary>
+        std::vector<StreamEventCallback> streamEventObserverList;
 
         /// <summary>
         /// The list of timestamp event observers.
@@ -77,6 +83,11 @@ namespace MediaController {
         /// The current speed of the stream.
         /// </summary>
         float speed;
+
+        /// <summary>
+        /// The current seek time of the stream.
+        /// </summary>
+        uint32_t seekTime;
 
         /// <summary>
         /// Store the custom data from caller and send back on event callback.

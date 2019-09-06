@@ -186,7 +186,7 @@ void Controller::AddObserver(TimestampEventCallback observer) {
 
 void Controller::AddStreamObserver(StreamEventCallback observer) {
     if (this->stream != nullptr)
-        this->stream->AddObserver(observer);
+        this->stream->GetGstreamer()->AddStreamObserver(observer);
 }
 
 void Controller::AddPelcoDataObserver(PelcoDataEventCallback observer) {
@@ -206,7 +206,7 @@ void Controller::RemoveObserver(TimestampEventCallback observer) {
 
 void Controller::RemoveStreamObserver(StreamEventCallback observer) {
     if (this->stream != nullptr)
-        this->stream->RemoveObserver(observer);
+        this->stream->GetGstreamer()->RemoveStreamObserver(observer);
 }
 
 void Controller::RemovePelcoDataObserver(PelcoDataEventCallback observer) {

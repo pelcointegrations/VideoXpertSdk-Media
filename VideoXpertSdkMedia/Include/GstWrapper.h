@@ -126,6 +126,18 @@ namespace MediaController {
         void RemovePelcoDataObserver(PelcoDataEventCallback observer);
 
         /// <summary>
+        /// Add a new subscriber to Stream events.
+        /// </summary>
+        /// <param name="observer">The <see cref="PelcoDataEventCallback"/> event handler.</param>
+        void AddStreamObserver(StreamEventCallback observer);
+
+        /// <summary>
+        /// Remove an existing stream event subscriber.
+        /// </summary>
+        /// <param name="observer">The <see cref="PelcoDataEventCallback"/> event handler.</param>
+        void RemoveStreamObserver(StreamEventCallback observer);
+
+        /// <summary>
         /// Remove all existing timestamp event subscribers.
         /// </summary>
         void ClearObservers();
@@ -140,7 +152,7 @@ namespace MediaController {
         /// Create the pipeline for an RTSP video stream.
         /// </summary>
         /// <param name="encoding">The video encoding type.</param>
-        void CreateVideoRtspPipeline(std::string encoding);
+        void CreateVideoRtspPipeline(std::string encoding, float speed, unsigned int seekTime);
 
         /// <summary>
         /// Create the pipeline for an RTSP audio stream.
@@ -150,12 +162,12 @@ namespace MediaController {
         /// <summary>
         /// Create the pipeline for an MJPEG stream.
         /// </summary>
-        void CreateMjpegPipeline();
+        void CreateMjpegPipeline(float speed);
 
         /// <summary>
         /// Set the pipeline state to playing and update the speed value for determining the framerate.
         /// </summary>
-        void Play(float speed = 1.0f);
+        void Play();
 
         /// <summary>
         /// Set the pipeline state to paused.
@@ -197,6 +209,9 @@ namespace MediaController {
         /// </summary>
         void SetControlUri(std::string uri);
        
+        /// <summary>
+        /// Set the Overlay String.  You may include date/time to the overlay
+        /// </summary>
         bool SetOverlayString(std::string stringToOverlay, MediaController::IController::VideoOverlayDataPosition position, bool inludeDateTime);
 
     private:

@@ -308,7 +308,7 @@ void OnBusMessage(GstBus *bus, GstMessage *msg, GstVars *vars) {
                 g_main_loop_unref(vars->loop);
 
             }
-            gst_message_unref (forward_msg);
+            gst_message_unref(forward_msg);
         }
         break;
     }
@@ -326,6 +326,21 @@ static void OnPadAddedAudio(GstElement * rtpbin, GstPad * new_pad, GstElement * 
     gst_object_unref(sinkpad);
 }
 
+static void OnTimeOut(GObject * session, GObject * source, GstVars * vars) {
+    GST_DEBUG_OBJECT(vars->pipeline, "Session Timed Out");
+    // Send the timestamp event to all observers.
+    for (size_t i = 0; i < vars->streamEventObserverList.size(); i++) {
+        StreamEvent* newEvent = new StreamEvent();
+        newEvent->eventType = StreamEvent::kConnectionLost;
+        vars->streamEventObserverList[i](newEvent);
+        delete newEvent;
+    }
+}
+
+static void OnNewManager(GstElement * rtspsrc, GstElement * mgr, GstVars * vars) {
+    vars->rtpBinManager = mgr;
+}
+
 // Called when rtpbin has validated a payload that we can depayload.
 static void OnPadAddedVideo(GstElement * rtpbin, GstPad * new_pad, GstVars * vars) {
     g_print("New payload on pad: %s\n", GST_PAD_NAME(new_pad));
@@ -336,6 +351,23 @@ static void OnPadAddedVideo(GstElement * rtpbin, GstPad * new_pad, GstVars * var
 
     // Setup a probe on the Pad for RTP packets (will give time and metadata)
     gst_pad_add_probe(new_pad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtpPacketReceived), vars, nullptr);
+
+    // Get session and connect to stream lost signals
+    if (vars->rtpBinManager != NULL) {
+        if (g_signal_lookup("get-internal-session", G_OBJECT_TYPE(vars->rtpBinManager)) != 0) {
+            GObject *rtpSession;
+            // In our case, will be zero
+            g_signal_emit_by_name(vars->rtpBinManager, "get-internal-session", 0, &rtpSession);
+            if (rtpSession != NULL) {
+                GST_DEBUG_OBJECT(vars->pipeline, "Set up Time Out Callback");
+                g_signal_connect(rtpSession, "on-bye-timeout", (GCallback)OnTimeOut, vars);
+                g_signal_connect(rtpSession, "on-timeout", (GCallback)OnTimeOut, vars);
+            }
+            else {
+                GST_ERROR_OBJECT(vars->pipeline, "No Timeout callback - will never get session lost callback");
+            }
+        }
+    }
 }
 
 static gboolean OnBeforeSend(GstElement * rtspsrc, GstRTSPMessage * message, GstVars * vars)
@@ -373,7 +405,6 @@ static gboolean OnBeforeSend(GstElement * rtspsrc, GstRTSPMessage * message, Gst
                     scaleEnd = uri.length();
                 }
                 gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, uri.substr(indexStart + 7, scaleEnd - indexStart).c_str());
-
             }
         }
     }
@@ -502,6 +533,14 @@ void GstWrapper::AddPelcoDataObserver(PelcoDataEventCallback observer) {
 
 void GstWrapper::RemovePelcoDataObserver(PelcoDataEventCallback observer) {
     _gstVars.pelcoDataObserverList.erase(remove(_gstVars.pelcoDataObserverList.begin(), _gstVars.pelcoDataObserverList.end(), observer), _gstVars.pelcoDataObserverList.end());
+}
+
+void GstWrapper::AddStreamObserver(StreamEventCallback observer) {
+    _gstVars.streamEventObserverList.push_back(observer);
+}
+
+void GstWrapper::RemoveStreamObserver(StreamEventCallback observer) {
+    _gstVars.streamEventObserverList.erase(remove(_gstVars.streamEventObserverList.begin(), _gstVars.streamEventObserverList.end(), observer), _gstVars.streamEventObserverList.end());
 }
 
 void GstWrapper::ClearObservers() {
@@ -673,9 +712,13 @@ void GstWrapper::CreatePipeline() {
     gst_object_unref(bus);
 }
 
-void GstWrapper::CreateVideoRtspPipeline(string encoding) {
+extern "C" gboolean plugin_init(GstPlugin * plugin);
+void GstWrapper::CreateVideoRtspPipeline(string encoding, float speed, unsigned int unixTime) {
     // Create the pipeline.
     CreatePipeline();
+
+    _gstVars.speed = speed;
+    _gstVars.seekTime = unixTime;
 
     // Determine which depayloader and decoder to use based on the encoding type.
     const char* videoDepayName;
@@ -698,6 +741,9 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
         videoDecName = Constants::kRtpH264Dec;
     }
 
+    gboolean result = gst_plugin_register_static(1, 2, "rtsprc", "Pelco rtspsrc", plugin_init, "3", "LGPL", "Source", "package", "origin");
+
+
     // Create the depayloader, decoder and video sink.
     _gstVars.rtspSrc = gst_element_factory_make("rtspsrc", "RTSPSrc");
     g_assert(_gstVars.rtspSrc);
@@ -717,6 +763,7 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     g_assert(_gstVars.videoDepay);
     _gstVars.videoDec = gst_element_factory_make(videoDecName, "videoDec");
     g_assert(_gstVars.videoDec);
+
     _gstVars.textOverlay = gst_element_factory_make("textoverlay", "RTSPTextOverlay");
     g_assert(_gstVars.textOverlay);
     if ((_gstVars.includeDateTimeInOverlay == false) && (_gstVars.stringToOverlay.length() != 0))
@@ -733,6 +780,10 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     g_assert(_gstVars.videoConvert);
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
+    if (_gstVars.speed != 1.0) {
+        // Will get smoother operation if latency is smaller
+        g_object_set(_gstVars.rtspSrc, "latency", 100, NULL);
+    }
 
     gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.videoDepay, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
     gst_element_link_many(_gstVars.videoDepay, _gstVars.videoDec, _gstVars.textOverlay, _gstVars.tee, _gstVars.queueView, _gstVars.videoConvert, _gstVars.videoSink, NULL);
@@ -742,6 +793,9 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding) {
     g_signal_connect(_gstVars.rtspSrc, "pad-added", G_CALLBACK(OnPadAddedVideo), &_gstVars);
 
     g_signal_connect(_gstVars.rtspSrc, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
+
+    // Get manager to connect to session timeouts
+    g_signal_connect(_gstVars.rtspSrc, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
 
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
@@ -784,8 +838,9 @@ void GstWrapper::CreateAudioRtspPipeline() {
     g_print("Starting RTP audio receiver pipeline.\n");
 }
 
-void GstWrapper::CreateMjpegPipeline() {
+void GstWrapper::CreateMjpegPipeline(float speed) {
     // Create the pipeline.
+    _gstVars.speed = speed;
     _gstVars.pipeline = gst_pipeline_new(nullptr);
     g_assert(_gstVars.pipeline);
     _gstVars.isPipelineActive = true;
@@ -838,9 +893,8 @@ void GstWrapper::CreateMjpegPipeline() {
     g_print("Starting MJPEG receiver pipeline.\n");
 }
 
-void GstWrapper::Play(float speed) {
+void GstWrapper::Play() {
     _gstVars.rtcpTimestamp = 0;
-    _gstVars.speed = speed;
 
     if (_gstVars.pipeline) {
         gst_element_set_state(_gstVars.pipeline, GST_STATE_PLAYING);

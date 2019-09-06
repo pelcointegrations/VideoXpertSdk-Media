@@ -60,8 +60,11 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport
 void Rtsp::Stream::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
     _gst->SetRtspTransport(transport);
     _gst->SetControlUri(this->_rtspCommands->GetControlUri());
-    this->_rtspCommands->PlayStream(this->_gst);
-    this->_gst->Play(speed == 0 ? 1 : speed);
+    if (speed == 0) {
+        speed = 1;
+    }
+    this->_rtspCommands->PlayStream(this->_gst, speed, unixTime);
+    this->_gst->Play();
 
     this->state = new PlayingState();
 }
@@ -84,11 +87,14 @@ bool Rtsp::Stream::GoToLive() { return true; }
 bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
     _gst->SetRtspTransport(transport);
     _gst->SetControlUri(this->_rtspCommands->GetControlUri());
+    if (speed == 0) {
+        speed = 1.0;
+    }
     bool ret = this->_rtspCommands->SetupStream(this->_gst, speed, unixTime);
     if (ret)
-        this->_rtspCommands->PlayStream(this->_gst);
+        this->_rtspCommands->PlayStream(this->_gst, speed, unixTime);
 
-    this->_gst->Play(speed == 0 ? 1 : speed);
+    this->_gst->Play();
     this->state = new PlayingState();
     return ret;
 }

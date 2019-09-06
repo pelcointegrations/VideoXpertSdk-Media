@@ -14,7 +14,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${ARCH})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${ARCH})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${ARCH})
 
-file(GLOB LIB_SOURCES Source/*.*)
+file(GLOB LIB_SOURCES Source/*.* Source/GStreamerSourceAndHeader/*.cpp)
 file(GLOB HEADER_FILES Include/*.*)
 
 include_directories(
@@ -49,4 +49,8 @@ target_link_libraries(${PROJECT_NAME} optimized gstvideo-1.0.lib)
 target_link_libraries(${PROJECT_NAME} optimized gstrtp-1.0.lib)
 target_link_libraries(${PROJECT_NAME} optimized gstbase-1.0.lib)
 target_link_libraries(${PROJECT_NAME} optimized gstrtsp-1.0.lib)
+target_link_libraries(${PROJECT_NAME} optimized gstnet-1.0.lib)
+target_link_libraries(${PROJECT_NAME} optimized gstsdp-1.0.lib)
+target_link_libraries(${PROJECT_NAME} optimized gio-2.0.lib)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES DEFINE_SYMBOL VxSdkMedia_EXPORTS)

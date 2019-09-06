@@ -19,12 +19,20 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
     if (_dataSession == nullptr)
         return false;
 
+
+    if (speed < 1.0f && speed > -1.0f) {
+        if (speed >= 0.0f)
+            speed = 1.0f;
+        else
+            speed = -1.0f;
+    }
+
     // If the jpegUri is empty send a new stream request.
     if (_dataSession->jpegUri[0] == '\0')
         NewRequest(_mediaRequest);
 
     if (!this->_gst->IsPipelineActive())
-        this->_gst->CreateMjpegPipeline();
+        this->_gst->CreateMjpegPipeline(speed);
 
     if (unixTime == 0) {
         VxSdk::VxResult::Value ret = _dataSession->GoLive();
@@ -44,14 +52,7 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
         this->_gst->SetTimestamp(unixTime);
     }
 
-    if (speed < 1.0f && speed > -1.0f) {
-        if (speed >= 0.0f)
-            speed = 1.0f;
-        else
-            speed = -1.0f;
-    }
-
-    this->_gst->Play(speed);
+    this->_gst->Play();
     this->state = new PlayingState();
     return true;
 }
@@ -94,12 +95,18 @@ bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTr
     if (_dataSession == nullptr)
         return false;
 
+if (speed < 1.0f && speed > -1.0f) {
+        if (speed >= 0.0f)
+            speed = 1.0f;
+        else
+            speed = -1.0f;
+    }
     // If the jpegUri is empty send a new stream request.
     if (_dataSession->jpegUri[0] == '\0')
         NewRequest(_mediaRequest);
 
     if (!this->_gst->IsPipelineActive())
-        this->_gst->CreateMjpegPipeline();
+        this->_gst->CreateMjpegPipeline(speed);
 
     unsigned int seekTime = unixTime == 0 ? this->_gst->GetLastTimestamp() : unixTime;
     // Seek to the last received timestamp generated during the Pause call.
@@ -112,14 +119,8 @@ bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTr
     // Set the initial timestamp to the seek time.
     this->_gst->SetTimestamp(seekTime);
 
-    if (speed < 1.0f && speed > -1.0f) {
-        if (speed >= 0.0f)
-            speed = 1.0f;
-        else
-            speed = -1.0f;
-    }
 
-    this->_gst->Play(speed);
+    this->_gst->Play();
     this->state = new PlayingState();
     return true;
 }

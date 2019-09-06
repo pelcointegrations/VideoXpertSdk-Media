@@ -64,7 +64,7 @@ namespace MediaController {
             /// <summary>
             /// Create a pipe line
             /// </summary>
-            void PlayStream(GstWrapper* gstwrapper);
+            void PlayStream(GstWrapper* gstwrapper, float speed, unsigned int unixTime);
 
             /// <summary>
             /// Send the TEARDOWN method and read the server response.
