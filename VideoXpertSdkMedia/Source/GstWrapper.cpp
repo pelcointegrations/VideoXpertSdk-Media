@@ -375,36 +375,26 @@ static gboolean OnBeforeSend(GstElement * rtspsrc, GstRTSPMessage * message, Gst
     if (message->type == GST_RTSP_MESSAGE_REQUEST)  {
         if (message->type_data.request.method == GST_RTSP_PLAY)
         {
-            // May need to add a scale
-            //   Figure this out by looking at the command URI
-            //  if it has scale, or a time, then set those header values
-            // e.g. "...=false&time=1562874600000&scale=-8.0"
-            string uri = message->type_data.request.uri;
-
-            size_t indexStart = uri.find("&time=", 0);
-            if (indexStart != string::npos) {
-                size_t timeEnd = uri.find("&", indexStart + 6);
-                if (timeEnd == string::npos) {
-                    timeEnd = uri.length();
-                }
-                unsigned long long time = 0;
-                stringstream timeStream(uri.substr(indexStart + 6, timeEnd - indexStart));
-                timeStream >> time;
-                time /= 1000;
-                string timeStr = Utilities::UnixTimeToRfc3339((unsigned) time);
+            if (vars->seekTime != 0) {
+                string timeStr = Utilities::UnixTimeToRfc3339(vars->seekTime);
                 string range = "clock=";
                 range += timeStr.c_str();
                 gst_rtsp_message_remove_header(message, GST_RTSP_HDR_RANGE, -1);
                 gst_rtsp_message_add_header(message, GST_RTSP_HDR_RANGE, range.c_str());
             }
 
-            indexStart = uri.find("&scale=");
-            if (indexStart != string::npos) {
-                size_t scaleEnd = uri.find("&", indexStart + 7);
-                if (scaleEnd == string::npos) {
-                    scaleEnd = uri.length();
+            stringstream scale;
+            // If speed is not 1 or 0, then you need to add it to the Play header as a scale factor
+            if ((vars->speed != 1.0) && (vars->speed != 0)) {
+                // Rules for scale - numbers whose absolute value are less than one have one decimal point.
+                //     numbers whose absolute value are greater than one are only the whole number
+                if ((vars->speed < 1.0f) && (vars->speed > -1.0f)) {
+                    scale << setprecision(1) << fixed << vars->speed;
                 }
-                gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, uri.substr(indexStart + 7, scaleEnd - indexStart).c_str());
+                else {
+                    scale << static_cast<int>(vars->speed);
+                }
+                gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, scale.str().c_str());
             }
         }
     }
@@ -452,6 +442,8 @@ GstWrapper::GstWrapper() {
     _gstVars.stringToOverlay.clear();
     _gstVars.overlayPositionV = 0;
     _gstVars.overlayPositionH = 0;
+    _gstVars.seekTime = 0;
+    _gstVars.speed = 1.0;
 }
 
 GstWrapper::~GstWrapper() { }
