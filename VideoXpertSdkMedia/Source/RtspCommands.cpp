@@ -325,7 +325,7 @@ void Commands::PlayStream(MediaController::GstWrapper* gstwrapper, float speed, 
                 gstwrapper->SetMulticastAddress(md.ip);
 
             gstwrapper->SetCaps("audio" + BuildGstCaps(md));
-            gstwrapper->CreateAudioRtspPipeline();
+            gstwrapper->CreateAudioRtspPipeline(speed, unixTime);
         }
     }
 }

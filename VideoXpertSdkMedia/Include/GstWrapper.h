@@ -157,7 +157,7 @@ namespace MediaController {
         /// <summary>
         /// Create the pipeline for an RTSP audio stream.
         /// </summary>
-        void CreateAudioRtspPipeline();
+        void CreateAudioRtspPipeline(float speed, unsigned int unixTime);
 
         /// <summary>
         /// Create the pipeline for an MJPEG stream.

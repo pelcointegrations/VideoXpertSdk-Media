@@ -448,9 +448,15 @@ GstWrapper::GstWrapper() {
 
 GstWrapper::~GstWrapper() { }
 
+extern "C" gboolean plugin_init(GstPlugin * plugin);
 void GstWrapper::Init() {
-    if (!gst_is_initialized())
+    if (!gst_is_initialized()) {
         gst_init(nullptr, nullptr);
+        gboolean result = gst_plugin_register_static(1, 2, "rtsprc", "Pelco rtspsrc", plugin_init, "3", "LGPL", "Source", "package", "origin");
+        if (result == FALSE) {
+            g_printerr("Cannot register plugin Pelco rstpsrc");
+        }
+    }
 }
 
 void GstWrapper::SetWindowHandle(guintptr winhandle) {
@@ -704,7 +710,6 @@ void GstWrapper::CreatePipeline() {
     gst_object_unref(bus);
 }
 
-extern "C" gboolean plugin_init(GstPlugin * plugin);
 void GstWrapper::CreateVideoRtspPipeline(string encoding, float speed, unsigned int unixTime) {
     // Create the pipeline.
     CreatePipeline();
@@ -732,9 +737,6 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding, float speed, unsigned 
         videoDepayName = Constants::kRtpH264Depay;
         videoDecName = Constants::kRtpH264Dec;
     }
-
-    gboolean result = gst_plugin_register_static(1, 2, "rtsprc", "Pelco rtspsrc", plugin_init, "3", "LGPL", "Source", "package", "origin");
-
 
     // Create the depayloader, decoder and video sink.
     _gstVars.rtspSrc = gst_element_factory_make("rtspsrc", "RTSPSrc");
@@ -772,8 +774,11 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding, float speed, unsigned 
     g_assert(_gstVars.videoConvert);
     _gstVars.videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
     g_assert(_gstVars.videoSink);
-    if (_gstVars.speed != 1.0) {
-        // Will get smoother operation if latency is smaller
+
+
+    if ((_gstVars.speed != 1.0) || (_gstVars.seekTime == 0)) {
+        // Will get smoother operation if latency is smaller when the playback is not 1.0
+        // Also, want a small latency for live
         g_object_set(_gstVars.rtspSrc, "latency", 100, NULL);
     }
 
@@ -794,9 +799,14 @@ void GstWrapper::CreateVideoRtspPipeline(string encoding, float speed, unsigned 
     g_print("Starting RTP video receiver pipeline.\n");
 }
 
-void GstWrapper::CreateAudioRtspPipeline() {
+// Usually video is the first pipeline to be created, but that is not guaranteed
+//   Set the speed and time in audio and video JIC the order gets off
+void GstWrapper::CreateAudioRtspPipeline(float speed, unsigned int unixTime) {
     // Create the pipeline.
     CreatePipeline();
+
+    _gstVars.speed = speed;
+    _gstVars.seekTime = unixTime;
 
     _gstVars.rtspSrc = gst_element_factory_make("rtspsrc", "RTSPSrc");
     g_assert(_gstVars.rtspSrc);
@@ -819,12 +829,21 @@ void GstWrapper::CreateAudioRtspPipeline() {
     _gstVars.audioSink = gst_element_factory_make(Constants::kAudioSink, "audioSink");
     g_assert(_gstVars.audioSink);
 
+    if ((_gstVars.speed != 1.0) || (_gstVars.seekTime == 0)) {
+        // Will get smoother operation if latency is smaller when the playback is not 1.0
+        // Also, want a small latency for live
+        g_object_set(_gstVars.rtspSrc, "latency", 100, NULL);
+    }
+
+
     // Add elements to the pipeline and link.
     gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.rtspSrc, _gstVars.audioDepay, _gstVars.audioDec, _gstVars.audioSink, NULL);
     gst_element_link_many(_gstVars.audioDepay, _gstVars.audioDec, _gstVars.audioSink, NULL);
 
     // So connect to the pad-added signal and pass the depayloader to link to it.
     g_signal_connect(_gstVars.rtspSrc, "pad-added", G_CALLBACK(OnPadAddedAudio), _gstVars.audioDepay);
+
+    g_signal_connect(_gstVars.rtspSrc, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
 
     _gstVars.protocol = VxSdk::VxStreamProtocol::kRtspRtp;
     g_print("Starting RTP audio receiver pipeline.\n");
