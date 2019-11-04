@@ -90,13 +90,10 @@ bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTranspo
     if (speed == 0) {
         speed = 1.0;
     }
-    bool ret = this->_rtspCommands->SetupStream(this->_gst, speed, unixTime);
-    if (ret)
-        this->_rtspCommands->PlayStream(this->_gst, speed, unixTime);
 
-    this->_gst->Play();
+    this->_gst->SetSpeed(speed);
     this->state = new PlayingState();
-    return ret;
+    return true;
 }
 
 bool Rtsp::Stream::StartLocalRecording(char* filePath, char* fileName) {

@@ -8,6 +8,7 @@ namespace MediaController {
         static const unsigned int kMsInNs = 1000000;
         static const unsigned int kNtpToEpochDiffSec = 2208988800;
         static const unsigned int kClockRate = 90000;
+        static const unsigned int kIntraFrameDiv = 111;
         static const unsigned short kPayloadType = 96;
         static const unsigned short kUnicastPort = 51298;
         static const unsigned short kKeepAliveRefreshSec = 15;
@@ -25,6 +26,8 @@ namespace MediaController {
         static const char* kHeaderAccept = "Accept";
         static const char* kHeaderRange = "Range";
         static const char* kHeaderScale = "Scale";
+        static const char* kHeaderFrames = "Frames";
+        static const char* kHeaderRateControl = "Rate-control";
         static const char* kHeaderContentLength = "content-length";
         static const char* kHeaderContentDisposition = "Content-Disposition";
         static const char* kHeaderResourceTimestamp = "X-Resource-Timestamp";
@@ -65,6 +68,8 @@ namespace MediaController {
         static const char* kPause = "PAUSE";
         static const char* kTeardown = "TEARDOWN";
         static const char* kSdpMimeType = "application/sdp";
+        static const char* kIntraPrefix = "intra";
+        static const char* kRateControlValue = "no";
         /*
         static const std::string kRtspPipeline = "udpsrc name=udpsrc0%1% buffer-size=524288 caps=\"application/x-rtp,media=(string)video%2%\" reuse=false port=%3%%4% "
                                                  "! .recv_rtp_sink_0 rtpbin name=rtpbin%1% ! decodebin ! d3dvideosink sync=false udpsrc name=udpsrc1%1% caps=\"application/x-rtcp\" "

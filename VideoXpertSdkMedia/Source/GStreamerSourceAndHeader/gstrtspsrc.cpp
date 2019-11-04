@@ -2428,10 +2428,6 @@ gst_rtspsrc_perform_seek (GstRTSPSrc * src, GstEvent * event)
     gst_event_parse_seek (event, &rate, &format, &flags,
         &cur_type, &cur, &stop_type, &stop);
 
-    /* no negative rates yet */
-    if (rate < 0.0)
-      goto negative_rate;
-
     /* we need TIME format */
     if (format != src->segment.format)
       goto no_format;
@@ -2564,11 +2560,6 @@ gst_rtspsrc_perform_seek (GstRTSPSrc * src, GstEvent * event)
   return TRUE;
 
   /* ERRORS */
-negative_rate:
-  {
-    GST_DEBUG_OBJECT (src, "negative playback rates are not supported yet.");
-    return FALSE;
-  }
 no_format:
   {
     GST_DEBUG_OBJECT (src, "unsupported format given, seek aborted.");

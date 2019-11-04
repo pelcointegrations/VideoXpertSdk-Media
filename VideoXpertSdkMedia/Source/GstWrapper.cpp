@@ -381,20 +381,31 @@ static gboolean OnBeforeSend(GstElement * rtspsrc, GstRTSPMessage * message, Gst
                 range += timeStr.c_str();
                 gst_rtsp_message_remove_header(message, GST_RTSP_HDR_RANGE, -1);
                 gst_rtsp_message_add_header(message, GST_RTSP_HDR_RANGE, range.c_str());
-            }
 
-            stringstream scale;
-            // If speed is not 1 or 0, then you need to add it to the Play header as a scale factor
-            if ((vars->speed != 1.0) && (vars->speed != 0)) {
-                // Rules for scale - numbers whose absolute value are less than one have one decimal point.
-                //     numbers whose absolute value are greater than one are only the whole number
-                if ((vars->speed < 1.0f) && (vars->speed > -1.0f)) {
-                    scale << setprecision(1) << fixed << vars->speed;
+                stringstream scale;
+                stringstream frames;
+                // If speed is not 0, then you need to add it to the Play header as a scale factor
+                if (vars->speed != 0) {
+                    // Rules for scale - numbers whose absolute value are less than one have one decimal point.
+                    //     numbers whose absolute value are greater than one are only the whole number
+                    if ((vars->speed < 1.0f) && (vars->speed > -1.0f)) {
+                        scale << setprecision(1) << fixed << vars->speed;
+                    }
+                    else {
+                        scale << static_cast<int>(vars->speed);
+                    }
+
+                    // Remove any existing Scale header and add a new Scale header with our speed.
+                    gst_rtsp_message_remove_header(message, GST_RTSP_HDR_SCALE, -1);
+                    gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, scale.str().c_str());
+
+                    // If the speed is not 1x then the Frames and Rate-control headers are needed.
+                    if (vars->speed != 1.0 && vars->currentTimestamp != 0) {
+                        frames << Constants::kIntraPrefix << Constants::kForwardSlash << abs(static_cast<int>(vars->speed * Constants::kIntraFrameDiv));
+                        gst_rtsp_message_add_header_by_name(message, Constants::kHeaderFrames, frames.str().c_str());
+                        gst_rtsp_message_add_header_by_name(message, Constants::kHeaderRateControl, Constants::kRateControlValue);
+                    }
                 }
-                else {
-                    scale << static_cast<int>(vars->speed);
-                }
-                gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, scale.str().c_str());
             }
         }
     }
@@ -419,6 +430,31 @@ static GstPadProbeReturn OnUnlinkSnapShot(GstPad *pad, GstPadProbeInfo *info, Gs
     gst_element_send_event(vars->encSnapShot, gst_event_new_eos());
 
     return GST_PAD_PROBE_REMOVE;
+}
+
+static void send_seek_event(GstVars* vars) {
+    gint64 position;
+    GstEvent* seekEvent;
+
+    /* Obtain the current position, needed for the seek event */
+    if (!gst_element_query_position(vars->pipeline, GST_FORMAT_TIME, &position)) {
+        g_printerr("Unable to retrieve current position.\n");
+        return;
+    }
+
+    /* Create the seek event */
+    if (vars->speed > 0) {
+        seekEvent = gst_event_new_seek(vars->speed, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SKIP), GST_SEEK_TYPE_SET, position, GST_SEEK_TYPE_END, 0);
+    }
+    else {
+        seekEvent = gst_event_new_seek(vars->speed, GST_FORMAT_TIME, (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_SKIP), GST_SEEK_TYPE_SET, 0, GST_SEEK_TYPE_SET, position);
+    }
+
+    GstElement* videoSink = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoSink");
+    if (videoSink != NULL) {
+        gst_element_send_event(videoSink, seekEvent);
+        g_print("Current rate: %g\n", vars->speed);
+    }
 }
 
 static GstBusSyncReply create_window(GstBus * bus, GstMessage * message, GstVars *vars) {
@@ -511,6 +547,14 @@ unsigned int GstWrapper::GetLastTimestamp() const {
 void GstWrapper::SetMode(Controller::Mode mode) {
     _gstVars.rtcpTimestamp = 0;
     _gstVars.mode = mode;
+}
+
+void GstWrapper::SetSpeed(float speed) {
+    if (_gstVars.pipeline && speed != 0) {
+        _gstVars.speed = speed;
+        _gstVars.seekTime = _gstVars.currentTimestamp;
+        send_seek_event(&_gstVars);
+    }
 }
 
 bool GstWrapper::IsPipelineActive() const {

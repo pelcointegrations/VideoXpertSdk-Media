@@ -96,6 +96,11 @@ namespace MediaController {
         float GetSpeed() const { return _gstVars.speed; }
 
         /// <summary>
+        /// Set the current playback speed.
+        /// </summary>
+        void SetSpeed(float speed);
+
+        /// <summary>
         /// Get the status of the pipeline.
         /// </summary>
         /// <returns>True if pipeline is active, otherwise false.</returns>
