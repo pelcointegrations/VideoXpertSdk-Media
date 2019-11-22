@@ -10,6 +10,10 @@ namespace MediaController {
     /// Variables required for GStreamer.
     /// </summary>
     struct GstVars {
+    public:
+        GstVars();
+        ~GstVars();
+    
         GstElement *pipeline;
         GstElement *src;
         GstElement *rtspSrc;
@@ -19,7 +23,9 @@ namespace MediaController {
         GstElement *tee;
         GstElement *queueView;
         GstElement *videoConvert;
+        GstElement* aspectRatioCrop;
         GstElement *videoSink;
+        GstElement* actualVideoSink;
         GstElement *audioDepay;
         GstElement *audioDec;
         GstElement *audioSink;
@@ -43,6 +49,7 @@ namespace MediaController {
         std::string stringToOverlay;
         int overlayPositionH;
         int overlayPositionV;
+        int overlayLineAlignment;
 
         /// <summary>
         /// The list of StreamEvent observers.
@@ -88,6 +95,7 @@ namespace MediaController {
         /// The current seek time of the stream.
         /// </summary>
         uint32_t seekTime;
+        uint32_t endTime;
 
         /// <summary>
         /// Store the custom data from caller and send back on event callback.
@@ -99,9 +107,20 @@ namespace MediaController {
         /// </summary>
         IStream::RTSPNetworkTransport transport;
 
+        /// <summary>
+        /// The current aspect ratio of the video stream.
+        /// </summary>
+        Controller::AspectRatios aspectRatio;
+
+        /// <summary>
+        /// Whether or not the rendered video should stretch to fit its display window.
+        /// </summary>
+        bool stretchToFit;
+
         bool isPipelineActive;
         bool isMjpeg;
         bool isRecording;
+        bool storeVideoFast;
         std::string rtpCaps;
         std::string cookie;
         std::string hostIp;
@@ -116,6 +135,7 @@ namespace MediaController {
         guint busWatchId;
         GMainLoop *loop;
         VxSdk::VxStreamProtocol::Value protocol;
+        guint timerId;
     };
 }
 #endif // GstVars_h__

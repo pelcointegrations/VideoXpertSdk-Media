@@ -28,6 +28,7 @@ namespace MediaController {
         bool GoToLive() override;
         bool Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
         void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
+        bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
         void Pause() override;
         void Stop() override;
         bool StartLocalRecording(char* filePath, char* fileName) override;
@@ -46,6 +47,10 @@ namespace MediaController {
         bool IsPipelineActive() override;
         void AddEventData(void* customData) override;
         bool AddVideoOverlayData(std::string overlayData, VideoOverlayDataPosition position, bool inlcudeDateTime) override;
+        AspectRatios GetAspectRatio() override;
+        void SetAspectRatio(AspectRatios aspectRatio) override;
+        bool GetStretchToFit() override;
+        void SetStretchToFit(bool stretchToFit)override;
 
         /// <summary>
         /// The current video stream instance.

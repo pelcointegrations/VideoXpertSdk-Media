@@ -27,8 +27,8 @@ namespace MediaController {
         static const char* kHeaderRange = "Range";
         static const char* kHeaderScale = "Scale";
         static const char* kHeaderFrames = "Frames";
-        static const char* kHeaderRateControl = "Rate-control";
-        static const char* kHeaderContentLength = "content-length";
+        static const char* kHeaderRateControl = "Rate-Control";
+        static const char* kHeaderContentLength = "Content-Length";
         static const char* kHeaderContentDisposition = "Content-Disposition";
         static const char* kHeaderResourceTimestamp = "X-Resource-Timestamp";
 
@@ -40,6 +40,8 @@ namespace MediaController {
         static const char* kLowerCaseHeaderAccept = "accept";
         static const char* kLowerCaseHeaderRange = "range";
         static const char* kLowerCaseHeaderScale = "scale";
+        static const char* kLowerCaseHeaderFrames = "frames";
+        static const char* kLowerCaseHeaderRateControl = "rate-control";
         static const char* kLowerCaseHeaderContentLength = "content-length";
         static const char* kLowerCaseHeaderContentDisposition = "content-disposition";
 
@@ -70,6 +72,7 @@ namespace MediaController {
         static const char* kSdpMimeType = "application/sdp";
         static const char* kIntraPrefix = "intra";
         static const char* kRateControlValue = "no";
+        static const char* kFramesAllValue = "all";
         /*
         static const std::string kRtspPipeline = "udpsrc name=udpsrc0%1% buffer-size=524288 caps=\"application/x-rtp,media=(string)video%2%\" reuse=false port=%3%%4% "
                                                  "! .recv_rtp_sink_0 rtpbin name=rtpbin%1% ! decodebin ! d3dvideosink sync=false udpsrc name=udpsrc1%1% caps=\"application/x-rtcp\" "
@@ -120,6 +123,7 @@ namespace MediaController {
         static const char* kRtpAudioDepay = "rtppcmudepay";
         static const char* kRtpAudioDec = "mulawdec";
         static const char* kVideoConvert = "videoconvert";
+        static const char* kAspectRatioCrop = "aspectratiocrop";
 
 #ifndef WIN32
         static const char* kVideoSink = "xvimagesink";

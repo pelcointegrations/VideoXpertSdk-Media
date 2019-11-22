@@ -41,6 +41,15 @@
     <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtsp.cpp">
       <Filter>Streaming\GStreamer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\GstVars.cpp">
+      <Filter>Streaming\GStreamer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GStreamerSourceAndHeader\d3dhelpers.cpp">
+      <Filter>Streaming\GStreamer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GStreamerSourceAndHeader\d3dvideosink.cpp">
+      <Filter>Streaming\GStreamer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Controller.h">

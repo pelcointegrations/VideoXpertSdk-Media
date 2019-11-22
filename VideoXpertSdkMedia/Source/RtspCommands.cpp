@@ -192,12 +192,7 @@ bool Commands::Setup(bool useTCP, bool firstAttempt) {
         requestStream << kHeaderTransport << kColonSpace << md.protocol << "/TCP" << kSemicolon << "unicast;interleaved=0-1" << kTwoNewLines;
     } 
     else {
-        if (!firstAttempt) {
-            requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << (md.isMulticast ? "multicast" : "unicast");
-        }
-        else {
-            requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << "unicast";
-        }
+        requestStream << kHeaderTransport << kColonSpace << md.protocol << kSemicolon << (md.isMulticast ? "multicast" : "unicast");
         requestStream << ";client_port=" << this->_dataPort << "-" << this->_rtcpPort << kTwoNewLines;
     }
     try { write(_pSocket, request); }
@@ -303,7 +298,7 @@ bool Commands::SetupStream(MediaController::GstWrapper* gstwrapper, float speed,
     return ret;
 }
 
-void Commands::PlayStream(MediaController::GstWrapper* gstwrapper, float speed, unsigned int unixTime) {
+void Commands::PlayStream(MediaController::GstWrapper* gstwrapper, float speed, unsigned int unixTime, bool storeVideoFast, int stopTime, char * path, char * fileName) {
     if (!gstwrapper->IsPipelineActive()) {
         // Update the pipeline using the description generated above.
         gstwrapper->SetPorts(this->_dataPort, this->_rtcpPort);
@@ -317,7 +312,12 @@ void Commands::PlayStream(MediaController::GstWrapper* gstwrapper, float speed, 
                 md.encoding = "JPEG";
 
             gstwrapper->SetCaps("video" + BuildGstCaps(md));
-            gstwrapper->CreateVideoRtspPipeline(md.encoding, speed, unixTime);
+            if (storeVideoFast == true) {
+                gstwrapper->StoreVideo(md.encoding, path, fileName, unixTime, stopTime);
+            }
+            else {
+                gstwrapper->CreateVideoRtspPipeline(md.encoding, speed, unixTime);
+            }
         }
         else {
             MediaDescription md = this->_sdp.GetFirstAudio();
@@ -392,6 +392,7 @@ void Commands::Teardown() {
 }
 
 void Commands::ResetPath(const string& streamUri) {
+    this->ClearSocket();
     this->_baseUri.clear();
     this->_controlUri.clear();
     this->_baseUri = this->_controlUri = streamUri;

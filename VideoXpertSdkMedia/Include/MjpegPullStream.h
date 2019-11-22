@@ -29,6 +29,7 @@ namespace MediaController {
             virtual ~Stream();
             bool Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
             void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
+            bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
             void Pause() override;
             void Stop() override;
             bool Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;

@@ -148,6 +148,20 @@ void Controller::Stop() {
         this->audioStream->state->Stop(*this->audioStream);
 }
 
+bool Controller::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) {
+    if (filePath == nullptr || fileName == nullptr || startTime == 0 || stopTime == 0 || stopTime <= startTime)
+        return false;
+
+    if (std::string(filePath).empty() || std::string(fileName).empty())
+        return false;
+
+    if (this->stream != nullptr)
+        return this->stream->StoreStream(startTime, stopTime, filePath, fileName);
+
+    return false;
+}
+
+
 bool Controller::StartLocalRecording(char* filePath, char* fileName) {
     if (filePath == nullptr || fileName == nullptr)
         return false;
@@ -243,5 +257,33 @@ bool Controller::AddVideoOverlayData(std::string overlayData, VideoOverlayDataPo
         return this->stream->GetGstreamer()->SetOverlayString(overlayData, position, includeDateTime);
     }
     return false;
+}
+
+Controller::AspectRatios Controller::GetAspectRatio() {
+    if (this->stream != nullptr) {
+        return this->stream->GetGstreamer()->GetAspectRatio();
+    }
+
+    return Controller::AspectRatios::k16x9;
+}
+
+void Controller::SetAspectRatio(Controller::AspectRatios aspectRatio) {
+    if (this->stream != nullptr) {
+        this->stream->GetGstreamer()->SetAspectRatio(aspectRatio);
+    }
+}
+
+bool Controller::GetStretchToFit() {
+    if (this->stream != nullptr) {
+        return this->stream->GetGstreamer()->GetStretchToFit();
+    }
+
+    return false;
+}
+
+void Controller::SetStretchToFit(bool stretchToFit) {
+    if (this->stream != nullptr) {
+        this->stream->GetGstreamer()->SetStretchToFit(stretchToFit);
+    }
 }
 

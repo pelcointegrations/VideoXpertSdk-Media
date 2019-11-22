@@ -121,6 +121,30 @@ namespace MediaController {
             kBottomRight
         };
         virtual bool AddVideoOverlayData(std::string overlayData, VideoOverlayDataPosition position, bool includeDateTime) = 0;
+
+        /// <summary>
+        /// Get the current aspect ratio.
+        /// </summary>
+        /// <returns>The current aspect ratio.</returns>
+        virtual AspectRatios GetAspectRatio() = 0;
+
+        /// <summary>
+        /// Set the current aspect ratio.
+        /// </summary>
+        /// <param name="aspectRatio">The aspect ratio.</param>
+        virtual void SetAspectRatio(AspectRatios aspectRatio) = 0;
+
+        /// <summary>
+        /// Gets whether or not the rendered video should stretch to fit its display window.
+        /// </summary>
+        /// <returns>True if the rendered video should stretch to fit its display window, otherwise false.</returns>
+        virtual bool GetStretchToFit() = 0;
+
+        /// <summary>
+        /// Sets whether or not the rendered video should stretch to fit its display window.
+        /// </summary>
+        /// <param name="stretchToFit">True to stretch the rendered video to fit its display window, otherwise false.</param>
+        virtual void SetStretchToFit(bool stretchToFit) = 0;
     };
 }
 #endif // IController_h_

@@ -15,7 +15,9 @@ namespace MediaController {
             /// <summary>An error or unknown value was returned.</summary>
             kUnknown,
             /// <summary>The connection to the stream was lost.</summary>
-            kConnectionLost
+            kConnectionLost,
+            /// <summary>Stored a file</summary>
+            kFileStoredComplete
         };
 
         /// <summary>

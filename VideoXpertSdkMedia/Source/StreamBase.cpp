@@ -29,6 +29,8 @@ void StreamBase::NewRequest(MediaRequest& request) {}
 
 bool StreamBase::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { return false; }
 
+bool StreamBase::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) { return false; }
+
 bool StreamBase::StartLocalRecording(char* filePath, char* fileName) { return false; }
 
 void StreamBase::StopLocalRecording() { }

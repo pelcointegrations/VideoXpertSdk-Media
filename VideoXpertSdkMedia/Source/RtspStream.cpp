@@ -96,6 +96,41 @@ bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTranspo
     return true;
 }
 
+bool Rtsp::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) {
+    _gst->SetRtspTransport(kRTPOverRTSP);
+    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
+    if (this->_gst->GetMode() != IController::kStopped)
+        this->Stop();
+
+    this->_gst->SetMode(IController::kPlayback);
+
+    // Reset to the base URI 
+    this->_rtspCommands->ResetPath(_startUrl);
+
+    // Send the sequence of RTSP commands needed to start a new stream.
+    if (!this->_rtspCommands->Options())
+        return false;
+
+    if (!this->_rtspCommands->Describe(true))
+        return false;
+
+    bool useTCP = true;
+    if (!this->_rtspCommands->Setup(useTCP, true))
+        return false;
+
+    if (!this->_rtspCommands->SetupStream(this->_gst, 1.0, startTime))
+        return false;
+
+    _gst->SetRtspTransport(kRTPOverRTSP);
+    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
+    this->_rtspCommands->PlayStream(this->_gst, 1.0, startTime, true, stopTime, filePath, fileName);
+    this->_gst->Play();
+
+    this->state = new PlayingState();
+    return true;
+}
+
+
 bool Rtsp::Stream::StartLocalRecording(char* filePath, char* fileName) {
     if (this->_gst->GetMode() == IController::kStopped)
         return false;

@@ -19,7 +19,6 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
     if (_dataSession == nullptr)
         return false;
 
-
     if (speed < 1.0f && speed > -1.0f) {
         if (speed >= 0.0f)
             speed = 1.0f;
@@ -35,7 +34,11 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
         this->_gst->CreateMjpegPipeline(speed);
 
     if (unixTime == 0) {
-        VxSdk::VxResult::Value ret = _dataSession->GoLive();
+        VxSdk::VxResult::Value ret = _dataSession->SetSpeed(speed);
+        if (ret != VxSdk::VxResult::kOK)
+            return false;
+
+        ret = _dataSession->GoLive();
         if (ret != VxSdk::VxResult::kOK)
             return false;
 
@@ -144,6 +147,8 @@ void MjpegPull::Stream::NewRequest(MediaRequest& request) {
             this->_gst->SetCookie(std::string(authToken));
     }
 }
+
+bool MjpegPull::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) { return false; }
 
 bool MjpegPull::Stream::StartLocalRecording(char* filePath, char* fileName) { return false; }
 

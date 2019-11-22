@@ -15,6 +15,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${ARCH})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${ARCH})
 
 file(GLOB LIB_SOURCES Source/*.* Source/GStreamerSourceAndHeader/*.cpp)
+if(UNIX)
+list(FILTER LIB_SOURCES EXCLUDE REGEX ".*d3d.*$")
+endif()
 file(GLOB HEADER_FILES Include/*.*)
 
 include_directories(
@@ -40,6 +43,9 @@ add_library(${PROJECT_NAME} SHARED ${LIB_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} optimized VxSdk.lib)
 target_link_libraries(${PROJECT_NAME} optimized libboost_regex-vc140-mt-1_62.lib)
+if (MSVC)
+target_link_libraries(${PROJECT_NAME} optimized d3d9.lib)
+endif()
 target_link_libraries(${PROJECT_NAME} optimized gstaudio-1.0.lib)
 target_link_libraries(${PROJECT_NAME} optimized gstreamer-1.0.lib)
 target_link_libraries(${PROJECT_NAME} optimized gobject-2.0.lib)

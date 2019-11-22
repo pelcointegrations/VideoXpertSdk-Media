@@ -153,6 +153,8 @@ namespace MediaController {
         /// <param name="customData">Custom data pointer.</param>
         void AddEventData(void* customData);
 
+        bool StoreVideo(std::string encoding, char* filePath, char* fileName, unsigned int startTime, unsigned int endTime);
+
         /// <summary>
         /// Create the pipeline for an RTSP video stream.
         /// </summary>
@@ -218,6 +220,29 @@ namespace MediaController {
         /// Set the Overlay String.  You may include date/time to the overlay
         /// </summary>
         bool SetOverlayString(std::string stringToOverlay, MediaController::IController::VideoOverlayDataPosition position, bool inludeDateTime);
+
+        /// <summary>
+        /// Get the current aspect ratio.
+        /// </summary>
+        /// <returns>The current aspect ratio.</returns>
+        Controller::AspectRatios GetAspectRatio();
+
+        /// <summary>
+        /// Set the current aspect ratio.
+        /// </summary>
+        void SetAspectRatio(Controller::AspectRatios aspectRatio);
+
+        /// <summary>
+        /// Gets whether or not the rendered video should stretch to fit its display window.
+        /// </summary>
+        /// <returns>True if the rendered video should stretch to fit its display window, otherwise false.</returns>
+        bool GetStretchToFit() const { return _gstVars.stretchToFit; }
+
+        /// <summary>
+        /// Sets whether or not the rendered video should stretch to fit its display window.
+        /// </summary>
+        /// <param name="stretchToFit">True to stretch the rendered video to fit its display window, otherwise false.</param>
+        void SetStretchToFit(bool stretchToFit);
 
     private:
         static void Init();

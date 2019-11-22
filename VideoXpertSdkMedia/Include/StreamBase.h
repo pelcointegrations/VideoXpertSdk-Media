@@ -20,6 +20,7 @@ namespace MediaController {
         /// </summary>
         virtual ~StreamBase();
         bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) override;
+        bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
         void Pause() override;
         void Stop() override;
         void NewRequest(MediaRequest& request) override;

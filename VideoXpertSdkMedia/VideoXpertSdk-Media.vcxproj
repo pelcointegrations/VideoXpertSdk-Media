@@ -129,7 +129,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;d3d9.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -147,7 +147,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-gd-1_62.lib;d3d9.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -170,7 +170,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;d3d9.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
@@ -193,10 +193,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VxSdk.lib;libboost_regex-vc140-mt-1_62.lib;d3d9.lib;gstaudio-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\GstVars.cpp" />
+    <ClCompile Include="Source\GStreamerSourceAndHeader\d3dhelpers.cpp" />
+    <ClCompile Include="Source\GStreamerSourceAndHeader\d3dvideosink.cpp" />
     <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtsp.cpp" />
     <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspext.cpp" />
     <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspsrc.cpp" />

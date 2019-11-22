@@ -11,6 +11,26 @@ namespace MediaController {
     class IStream {
     public:
         /// <summary>
+        /// Values that represent the aspect ratio of the video stream.
+        /// </summary>
+        enum AspectRatios {
+            /// <summary>16:9 aspect ratio (Default).</summary>
+            k16x9,
+
+            /// <summary>4:3 aspect ratio.</summary>
+            k4x3,
+
+            /// <summary>1:1 aspect ratio.</summary>
+            k1x1,
+
+            /// <summary>3:2 aspect ratio.</summary>
+            k3x2,
+
+            /// <summary>5:49 aspect ratio.</summary>
+            k5x4
+        };
+
+        /// <summary>
         /// Values that represent the different playback modes.
         /// </summary>
         enum Mode {
@@ -50,6 +70,9 @@ namespace MediaController {
         virtual bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) = 0;
         
         virtual void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport = kUDP) = 0;
+
+        virtual bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) = 0;
+
 
         /// <summary>
         /// Starts recording the current video stream to a local file.
