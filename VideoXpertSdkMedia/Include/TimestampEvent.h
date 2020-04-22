@@ -9,15 +9,13 @@ namespace MediaController {
     struct TimestampEvent {
 
         /// <summary>
-        /// The absolute time of the current stream in unix timestamp format.
-        ///    This will contain seconds
+        /// The absolute time, in seconds, of the current stream in unix timestamp format.
         /// </summary>
         unsigned int unixTime;
 
         /// <summary>
-        /// The absolute time of the current stream in unix timestamp format.
-        ///    This will contain the microseconds
-        ///  unixTime and unixTimeMicroseconds can be used together to gain better resolution
+        /// The microsecond value of the current unix timestamp. May be combined with <c>unixTime</c> to increase
+        /// the precision of the timestamp.
         /// </summary>
         unsigned int unixTimeMicroSeconds;
 

@@ -29,41 +29,10 @@ namespace MediaController {
         void SetWindowHandle(guintptr winhandle);
 
         /// <summary>
-        /// Set the stream location.
-        /// </summary>
-        /// <param name="location">The URI of the new stream location.</param>
-        void SetLocation(std::string location);
-
-        /// <summary>
-        /// Set the receiver ports.
-        /// </summary>
-        /// <param name="rtpPort">The port to receive RTP data.</param>
-        /// <param name="rtcpPort">The port to receive RTCP data.</param>
-        void SetPorts(int rtpPort, int rtcpPort);
-
-        /// <summary>
-        /// Set the stream capabilities.
-        /// </summary>
-        /// <param name="caps">The stream capabilities.</param>
-        void SetCaps(std::string caps, bool isMjpeg = false);
-
-        /// <summary>
         /// Set the cookie for MJPEG streams.
         /// </summary>
         /// <param name="cookie">The cookie value.</param>
         void SetCookie(std::string cookie);
-
-        /// <summary>
-        /// Set the RTCP host IP.
-        /// </summary>
-        /// <param name="hostIp">The IP of the RTCP host.</param>
-        void SetRtcpHostIP(std::string hostIp);
-
-        /// <summary>
-        /// Set the multicast group address.
-        /// </summary>
-        /// <param name="multicastAddress">The multicast group address.</param>
-        void SetMulticastAddress(std::string multicastAddress);
 
         /// <summary>
         /// Set the internal timestamp variable.
@@ -75,7 +44,7 @@ namespace MediaController {
         /// Get the last timestamp received from the stream.
         /// </summary>
         /// <returns>The unix timestamp.</returns>
-        unsigned int GetLastTimestamp() const;
+        unsigned int GetLastTimestamp() const { return _gstVars.currentTimestamp; }
 
         /// <summary>
         /// Set the playback mode.
@@ -104,7 +73,7 @@ namespace MediaController {
         /// Get the status of the pipeline.
         /// </summary>
         /// <returns>True if pipeline is active, otherwise false.</returns>
-        bool IsPipelineActive() const;
+        bool IsPipelineActive() const { return _gstVars.pipeline != nullptr; }
 
         /// <summary>
         /// Add a new subscriber to timestamp events.
@@ -153,23 +122,31 @@ namespace MediaController {
         /// <param name="customData">Custom data pointer.</param>
         void AddEventData(void* customData);
 
-        bool StoreVideo(std::string encoding, char* filePath, char* fileName, unsigned int startTime, unsigned int endTime);
+        /// <summary>
+        /// Records a stream directly to a local file.
+        /// </summary>
+        /// <param name="filePath">The directory to store the generated video file.</param>
+        /// <param name="fileName">The name to use for the generated video file.</param>
+        /// <param name="startTime">The start time of the stream to record.</param>
+        /// <param name="endTime">The end time of the stream to record.</param>
+        /// <param name="request">The streaming media to request.</param>
+        /// <returns>True if the recording started successfully, otherwise false.</returns>
+        bool StoreVideo(char* filePath, char* fileName, unsigned int startTime, unsigned int endTime, MediaRequest request);
 
         /// <summary>
         /// Create the pipeline for an RTSP video stream.
         /// </summary>
-        /// <param name="encoding">The video encoding type.</param>
-        void CreateVideoRtspPipeline(std::string encoding, float speed, unsigned int seekTime);
-
-        /// <summary>
-        /// Create the pipeline for an RTSP audio stream.
-        /// </summary>
-        void CreateAudioRtspPipeline(float speed, unsigned int unixTime);
+        /// <param name="speed">The playback speed.</param>
+        /// <param name="seekTime">The start time for playback.</param>
+        /// <param name="request">The streaming media to request.</param>
+        void CreateRtspPipeline(float speed, unsigned int seekTime, MediaRequest request, IStream::RTSPNetworkTransport transport);
 
         /// <summary>
         /// Create the pipeline for an MJPEG stream.
         /// </summary>
-        void CreateMjpegPipeline(float speed);
+        /// <param name="speed">The playback speed.</param>
+        /// <param name="jpegUri">The URI of the MJPEG stream.</param>
+        void CreateMjpegPipeline(float speed, char* jpegUri);
 
         /// <summary>
         /// Set the pipeline state to playing and update the speed value for determining the framerate.
@@ -179,13 +156,14 @@ namespace MediaController {
         /// <summary>
         /// Set the pipeline state to paused.
         /// </summary>
-        void Pause() const;
+        void Pause();
 
         /// <summary>
         /// Starts recording the current video stream to a local file.
         /// </summary>
         /// <param name="filePath">The directory to store the generated video file.</param>
         /// <param name="fileName">The name to use for the generated video file.</param>
+        /// <returns>True if the recording started successfully, otherwise false.</returns>
         bool StartLocalRecord(char* filePath, char* fileName);
 
         /// <summary>
@@ -198,34 +176,28 @@ namespace MediaController {
         /// </summary>
         /// <param name="filePath">The directory to store the generated snapshot file.</param>
         /// <param name="fileName">The name to use for the generated snapshot file.</param>
+        /// <returns>True if the snapshot was successful, otherwise false.</returns>
         bool SnapShot(char* filePath, char* fileName);
 
         /// <summary>
         /// Clear the pipeline and display window.
         /// </summary>
         void ClearPipeline();
-
-        /// <summary>
-        /// Set the RTSP Transport
-        /// </summary>
-        void SetRtspTransport(IStream::RTSPNetworkTransport transport);
-        IStream::RTSPNetworkTransport  GetRtspTransport();
-
-        /// <summary>
-        /// Set the control URI
-        /// </summary>
-        void SetControlUri(std::string uri);
        
         /// <summary>
         /// Set the Overlay String.  You may include date/time to the overlay
         /// </summary>
-        bool SetOverlayString(std::string stringToOverlay, MediaController::IController::VideoOverlayDataPosition position, bool inludeDateTime);
+        /// <param name="stringToOverlay">The overlay text.</param>
+        /// <param name="position">The position of the overlay.</param>
+        /// <param name="includeDateTime">True to include the date and time in the overlay, otherwise false.</param>
+        /// <returns>True if the overlay was successfully set, otherwise false.</returns>
+        bool SetOverlayString(std::string stringToOverlay, IController::VideoOverlayDataPosition position, bool includeDateTime);
 
         /// <summary>
         /// Get the current aspect ratio.
         /// </summary>
         /// <returns>The current aspect ratio.</returns>
-        Controller::AspectRatios GetAspectRatio();
+        Controller::AspectRatios GetAspectRatio() const { return _gstVars.aspectRatio; }
 
         /// <summary>
         /// Set the current aspect ratio.
@@ -245,8 +217,6 @@ namespace MediaController {
         void SetStretchToFit(bool stretchToFit);
 
     private:
-        static void Init();
-        void CreatePipeline();
         GstVars _gstVars;
     };
 }

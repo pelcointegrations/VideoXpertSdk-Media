@@ -20,6 +20,12 @@ namespace MediaController {
         /// </summary>
         /// <returns>The current time as a unix timestamp.</returns>
         unsigned int CurrentUnixTime();
+
+        /// <summary>
+        /// Get the current time zone offset.
+        /// </summary>
+        /// <returns>The current time zone offset.</returns>
+        long TzOffset();
     }
 }
 #endif // Utilities_h__

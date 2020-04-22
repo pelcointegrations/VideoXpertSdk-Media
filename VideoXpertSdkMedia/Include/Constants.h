@@ -4,84 +4,29 @@
 namespace MediaController {
     namespace Constants {
         // Numerics
-        static const unsigned long long kNsInSec = 1000000000;
-        static const unsigned int kMsInNs = 1000000;
-        static const unsigned int kNtpToEpochDiffSec = 2208988800;
+        static const unsigned long long kMsInNs = 1000000;
+        static const unsigned long long kNtpToEpochDiffSec = 2208988800;
         static const unsigned int kClockRate = 90000;
         static const unsigned int kIntraFrameDiv = 111;
         static const unsigned short kPayloadType = 96;
-        static const unsigned short kUnicastPort = 51298;
-        static const unsigned short kKeepAliveRefreshSec = 15;
-        static const unsigned short kEndpointMaxSize = 512;
+        static const int kSnapshotTimeoutMs = 5 * 1000;
+        static const int kSnapshotSleepTimeMs = 100;
+        static const int kMjpegShutdownSleepTimeMs = 1000;
         static const unsigned short kDateMaxSize = 32;
         static const unsigned short kMillisecondsInt = 1000;
         static const float kMillisecondsFloat = 1000.0;
 
         // Header names
-        static const char* kHeaderLocation = "Location";
-        static const char* kHeaderSession = "Session";
-        static const char* kHeaderUserAgent = "User-Agent";
-        static const char* kHeaderTransport = "Transport";
-        static const char* kHeaderCSeq = "CSeq";
-        static const char* kHeaderAccept = "Accept";
-        static const char* kHeaderRange = "Range";
-        static const char* kHeaderScale = "Scale";
         static const char* kHeaderFrames = "Frames";
         static const char* kHeaderRateControl = "Rate-Control";
-        static const char* kHeaderContentLength = "Content-Length";
-        static const char* kHeaderContentDisposition = "Content-Disposition";
         static const char* kHeaderResourceTimestamp = "X-Resource-Timestamp";
-
-        static const char* kLowerCaseHeaderLocation = "location";
-        static const char* kLowerCaseHeaderSession = "session";
-        static const char* kLowerCaseHeaderUserAgent = "user-agent";
-        static const char* kLowerCaseHeaderTransport = "transport";
-        static const char* kLowerCaseHeaderCSeq = "cseq";
-        static const char* kLowerCaseHeaderAccept = "accept";
-        static const char* kLowerCaseHeaderRange = "range";
-        static const char* kLowerCaseHeaderScale = "scale";
-        static const char* kLowerCaseHeaderFrames = "frames";
-        static const char* kLowerCaseHeaderRateControl = "rate-control";
-        static const char* kLowerCaseHeaderContentLength = "content-length";
-        static const char* kLowerCaseHeaderContentDisposition = "content-disposition";
-
-        // Status codes
-        static const unsigned short kStatusCode200 = 200;
-        static const unsigned short kStatusCode301 = 301;
-        static const unsigned short kStatusCode302 = 302;
 
         // Rtsp
         static const char* kWhitespace = " ";
-        static const char* kColon = ":";
-        static const char* kColonSpace = ": ";
-        static const char* kSemicolon = ";";
         static const char* kForwardSlash = "/";
-        static const char* kEquals = "=";
-        static const char* kReturn = "\r";
-        static const char* kOneNewLine = "\r\n";
-        static const char* kTwoNewLines = "\r\n\r\n";
-        static const char* kRtspVersion = "RTSP/1.0";
-        static const char* kActualUserAgent = "Pelco VxSdk";
-        static const char* kOptions = "OPTIONS";
-        static const char* kGetParameter = "GET_PARAMETER";
-        static const char* kDescribe = "DESCRIBE";
-        static const char* kSetup = "SETUP";
-        static const char* kPlay = "PLAY";
-        static const char* kPause = "PAUSE";
-        static const char* kTeardown = "TEARDOWN";
-        static const char* kSdpMimeType = "application/sdp";
         static const char* kIntraPrefix = "intra";
         static const char* kRateControlValue = "no";
         static const char* kFramesAllValue = "all";
-        /*
-        static const std::string kRtspPipeline = "udpsrc name=udpsrc0%1% buffer-size=524288 caps=\"application/x-rtp,media=(string)video%2%\" reuse=false port=%3%%4% "
-                                                 "! .recv_rtp_sink_0 rtpbin name=rtpbin%1% ! decodebin ! d3dvideosink sync=false udpsrc name=udpsrc1%1% caps=\"application/x-rtcp\" "
-                                                 "reuse=false port=%5% ! rtpbin%1%.recv_rtcp_sink_0";
-        */
-        static const std::string kRtspPipeline = "udpsrc name=udpsrc0%1% buffer-size=524288 caps=\"application/x-rtp,media=(string)video%2%\" reuse=false port=%3%%4% "
-            "! .recv_rtp_sink_0 rtpbin name=rtpbin%1% ! decodebin ! videoconvert ! d3dvideosink sync=false udpsrc name=udpsrc1%1% caps=\"application/x-rtcp\" "
-            "reuse=false port=%5% ! rtpbin%1%.recv_rtcp_sink_0";
-
 
         // Mjpeg
         static const char* kHttpHeaders = "http-headers";
@@ -90,48 +35,33 @@ namespace MediaController {
         // GStreamer
         static const char* kSrc = "src";
         static const char* kSink = "sink";
-        static const char* kPort = "port";
-        static const char* kAddress = "address";
-        static const char* kCaps = "caps";
-        static const char* kHost = "host";
-        static const char* kSync = "sync";
-        static const char* kAsync = "async";
         static const char* kRetries = "retries";
         static const char* kKeepAlive = "keep-alive";
         static const char* kLocation = "location";
         static const char* kHttpLogLevel = "http-log-level";
         static const char* kSslStrict = "ssl-strict";
         static const char* kCookies = "cookies";
-        static const char* kEncodingJpeg = "JPEG";
-        static const char* kEncodingMpeg = "MP4V-ES";
-        static const char* kEncodingH264 = "H264";
-        static const char* kEncodingH265 = "H265";
 
         // GStreamer elements
-        static const char* kUdpSrc = "udpsrc";
-        static const char* kUdpSink = "udpsink";
-        static const char* kRtpH264Depay = "rtph264depay";
-        static const char* kRtpH264Dec = "avdec_h264";
-        static const char* kRtpH265Depay = "rtph265depay";
-        static const char* kRtpH265Dec = "avdec_h265";
-        static const char* kRtpMp4vDepay = "rtpmp4vdepay";
-        static const char* kRtpMp4vDec = "avdec_mpeg4";
-        static const char* kRtpBin = "rtpbin";
         static const char* kHttpSrc = "souphttpsrc";
         static const char* kJpegDec = "jpegdec";
-        static const char* kRtpJpegDepay = "rtpjpegdepay";
-        static const char* kRtpAudioDepay = "rtppcmudepay";
-        static const char* kRtpAudioDec = "mulawdec";
+        static const char* kJpegEnc = "jpegenc";
         static const char* kVideoConvert = "videoconvert";
         static const char* kAspectRatioCrop = "aspectratiocrop";
-
-#ifndef WIN32
-        static const char* kVideoSink = "xvimagesink";
-        static const char* kAudioSink = "alsasink";
-#else
+        static const char* kTextOverlay = "textoverlay";
+        static const char* kUriDecodeBin = "uridecodebin";
+        static const char* kDecodeBin = "decodebin";
+        static const char* kTee = "tee";
+        static const char* kQueue = "queue";
+        static const char* kPlaybin = "playbin";
+        static const char* kX264Enc = "x264enc";
+        static const char* kMp4Mux = "mp4mux";
+        static const char* kFilesink = "filesink";
+        static const char* kRtspSrc = "rtspsrc";
         static const char* kVideoSink = "autovideosink";
-        static const char* kAudioSink = "directsoundsink";
-#endif
+        static const char* kH264Depay = "rtph264depay";
+        static const char* kH264Parse = "h264parse";
+        static const char* kMkvMux = "matroskamux";
 
     }
 }

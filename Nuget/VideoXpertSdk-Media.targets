@@ -16,13 +16,11 @@
   </ItemDefinitionGroup>    
   <ItemGroup>
     <BinFiles Include="$(MSBuildThisFileDirectory)\$(Platform)\bin\**" />
-	<EtcFiles Include="$(MSBuildThisFileDirectory)\etc\**" />
 	<GioLibFiles Include="$(MSBuildThisFileDirectory)\$(Platform)\lib\gio\modules\**" />
 	<GstLibFiles Include="$(MSBuildThisFileDirectory)\$(Platform)\lib\gstreamer-1.0\**" />
   </ItemGroup>   
   <Target Name="CopyFiles">  
     <Copy SourceFiles="@(BinFiles)" DestinationFiles="@(BinFiles->'$(TargetDir)%(RecursiveDir)%(Filename)%(Extension)')" />
-	<Copy SourceFiles="@(EtcFiles)" DestinationFiles="@(EtcFiles->'$(TargetDir)..\etc\%(RecursiveDir)%(Filename)%(Extension)')" />
 	<Copy SourceFiles="@(GioLibFiles)" DestinationFiles="@(GioLibFiles->'$(TargetDir)..\lib\gio\modules\%(RecursiveDir)%(Filename)%(Extension)')" />
 	<Copy SourceFiles="@(GstLibFiles)" DestinationFiles="@(GstLibFiles->'$(TargetDir)..\lib\gstreamer-1.0\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>  

@@ -57,39 +57,39 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
-    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gio-2.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-video-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-rtsp-1.0.props" />
+    <Import Project="$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\share\vs\2010\libs\gstreamer-net-1.0.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -121,7 +121,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_EXPORTING;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)\ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4267;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
       <GenerateXMLDocumentationFiles>true</GenerateXMLDocumentationFiles>
@@ -140,7 +140,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_EXPORTING;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)\ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4267;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -160,7 +160,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_EXPORTING;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)\ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4267;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -183,7 +183,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_EXPORTING;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)\ThirdParty\GStreamer\1.14.4\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty\Boost\1.62.0.0\Include;Include;$(ProjectDir)ThirdParty\GStreamer\1.16.2\$(Platform)\gstreamer_devel\include\libsoup-2.4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4267;4018;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -200,13 +200,8 @@
     <ClCompile Include="Source\GstVars.cpp" />
     <ClCompile Include="Source\GStreamerSourceAndHeader\d3dhelpers.cpp" />
     <ClCompile Include="Source\GStreamerSourceAndHeader\d3dvideosink.cpp" />
-    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtsp.cpp" />
-    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspext.cpp" />
-    <ClCompile Include="Source\GStreamerSourceAndHeader\gstrtspsrc.cpp" />
     <ClCompile Include="Source\GstWrapper.cpp" />
     <ClCompile Include="Source\MjpegPullStream.cpp" />
-    <ClCompile Include="Source\RtspCommands.cpp" />
-    <ClCompile Include="Source\RtspSdpParser.cpp" />
     <ClCompile Include="Source\RtspStream.cpp" />
     <ClCompile Include="Source\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -234,10 +229,6 @@
     <ClInclude Include="Include\GstVars.h" />
     <ClInclude Include="Include\GstWrapper.h" />
     <ClInclude Include="Include\MjpegPullStream.h" />
-    <ClInclude Include="Include\RtspCommands.h" />
-    <ClInclude Include="Include\RtspMediaDescription.h" />
-    <ClInclude Include="Include\RtspResponse.h" />
-    <ClInclude Include="Include\RtspSdpParser.h" />
     <ClInclude Include="Include\RtspStream.h" />
     <ClInclude Include="Include\stdafx.h" />
     <ClInclude Include="Include\StreamBase.h" />

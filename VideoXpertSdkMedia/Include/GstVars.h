@@ -13,42 +13,48 @@ namespace MediaController {
     public:
         GstVars();
         ~GstVars();
-    
+
+        // GStreamer Pipeline Elements
         GstElement *pipeline;
-        GstElement *src;
-        GstElement *rtspSrc;
-        GstElement *videoDepay;
-        GstElement *videoDec;
-        GstElement *textOverlay;
-        GstElement *tee;
-        GstElement *queueView;
-        GstElement *videoConvert;
-        GstElement* aspectRatioCrop;
-        GstElement *videoSink;
-        GstElement* actualVideoSink;
-        GstElement *audioDepay;
-        GstElement *audioDec;
-        GstElement *audioSink;
-        GstElement *queueRecord;
-        GstElement *x264enc;
-        GstElement *mkvMux;
-        GstElement *fileSink;
-        GstElement *rtpBinManager;
-        GstCaps *caps;
-        GstPadLinkReturn linkReturn;
-        GstPad *srcPad;
-        GstPad *sinkPad;
-        GstPad *teePad;
+        GstElement* audioSource;
+        GstElement* videoSource;
+        GstElement* videoDecoder;
+        GstElement* videoParse;
+        GstElement* videoTee;
+        GstElement* videoQueue;
+        GstElement* videoSink;
 
-        GstElement *queueSnapShot;
-        GstElement *encSnapShot;
-        GstElement *fileSinkSnapShot;
-        GstPad *teePadSnapShot;
+        // Dynamic Pipeline Elements
+        GstElement* teeQueue;
+        GstElement* encoder;
+        GstElement* muxer;
+        GstElement* fileSink;
+        GstElement* rtpBinManager;
+        GstPad* videoTeePad;
 
+        /// <summary>
+        /// Indicates whether the date and time should be included in the text overlay.
+        /// </summary>
         bool includeDateTimeInOverlay;
+
+        /// <summary>
+        /// The text to display in the overlay.
+        /// </summary>
         std::string stringToOverlay;
+
+        /// <summary>
+        /// The horizontal alignment of the overlay text
+        /// </summary>
         int overlayPositionH;
+
+        /// <summary>
+        /// The vertical alignment of the overlay text
+        /// </summary>
         int overlayPositionV;
+
+        /// <summary>
+        /// The alignment of overlay text lines relative to each other.
+        /// </summary>
         int overlayLineAlignment;
 
         /// <summary>
@@ -95,6 +101,10 @@ namespace MediaController {
         /// The current seek time of the stream.
         /// </summary>
         uint32_t seekTime;
+
+        /// <summary>
+        /// The end time to use when using a playback time range.
+        /// </summary>
         uint32_t endTime;
 
         /// <summary>
@@ -103,38 +113,58 @@ namespace MediaController {
         void* eventData;
 
         /// <summary>
-        /// Store the preferred RSTP transport (for RTSP only).
-        /// </summary>
-        IStream::RTSPNetworkTransport transport;
-
-        /// <summary>
         /// The current aspect ratio of the video stream.
         /// </summary>
         Controller::AspectRatios aspectRatio;
 
         /// <summary>
-        /// Whether or not the rendered video should stretch to fit its display window.
+        /// Indicates whether or not the rendered video should stretch to fit its display window.
         /// </summary>
         bool stretchToFit;
 
-        bool isPipelineActive;
+        /// <summary>
+        /// Indicates whether or not the current stream is MJPEG.
+        /// </summary>
         bool isMjpeg;
+
+        /// <summary>
+        /// Indicates whether or not the current stream is being recorder to a local file.
+        /// </summary>
         bool isRecording;
-        bool storeVideoFast;
-        std::string rtpCaps;
+
+        /// <summary>
+        /// Indicates whether or not a stream is being stored as a local file.
+        /// </summary>
+        bool isStoringVideo;
+
+        /// <summary>
+        /// Indicates whether or not the current stream is paused.
+        /// </summary>
+        bool isPaused;
+
+        /// <summary>
+        /// The cookie data to use for MJPEG stream authentication.
+        /// </summary>
         std::string cookie;
-        std::string hostIp;
-        std::string multicastAddress;
-        std::string location;
-        std::string recordingFilePath;
-        std::string uriControl;
-        gint rtpPort;
-        gint rtcpPort;
-        gint rtcpSinkPort;
+
+        /// <summary>
+        /// The handle of the window that will be used to display video.
+        /// </summary>
         guintptr windowHandle;
+
+        /// <summary>
+        /// The event source ID returned from the bus.
+        /// </summary>
         guint busWatchId;
+
+        /// <summary>
+        /// The GStreamer event loop.
+        /// </summary>
         GMainLoop *loop;
-        VxSdk::VxStreamProtocol::Value protocol;
+
+        /// <summary>
+        /// The timer ID used to monitor for connection loss.
+        /// </summary>
         guint timerId;
     };
 }

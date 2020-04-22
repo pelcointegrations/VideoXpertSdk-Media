@@ -22,12 +22,12 @@ file(GLOB HEADER_FILES Include/*.*)
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/Include/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/include/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/include/glib-2.0
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/include/gstreamer-1.0/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/include/libsoup-2.4/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/include/orc-0.4/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/lib/glib-2.0/include/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/include/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/include/glib-2.0
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/include/gstreamer-1.0/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/include/libsoup-2.4/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/include/orc-0.4/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/lib/glib-2.0/include/
   ${CMAKE_SOURCE_DIR}/ThirdParty/Boost/1.62.0.0/Include/
   ${CMAKE_SOURCE_DIR}/packages/VideoXpertSdk/build/native/include/
   ${GST_INCLUDE_DIRS}
@@ -35,7 +35,7 @@ include_directories(
 
 link_directories(
   ${CMAKE_SOURCE_DIR}/ThirdParty/Boost/1.62.0.0/Lib/${ARCH}/
-  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.14.4/${ARCH}/gstreamer_devel/lib/
+  ${CMAKE_SOURCE_DIR}/ThirdParty/GStreamer/1.16.2/${ARCH}/gstreamer_devel/lib/
   ${CMAKE_SOURCE_DIR}/packages/VideoXpertSdk/build/native/${ARCH}/lib/
 )
 

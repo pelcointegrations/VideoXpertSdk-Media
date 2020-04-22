@@ -2,7 +2,6 @@
 #define RtspStream_h__
 
 #include "StreamBase.h"
-#include "RtspCommands.h"
 
 namespace MediaController {
 
@@ -21,15 +20,13 @@ namespace MediaController {
             /// Constructor.
             /// </summary>
             /// <param name="request">The requested media.</param>
-            /// <param name="isVideo">Specifies wheather this Stream handles audio or video.</param>
-            Stream(MediaRequest& request, bool isVideo);
+            Stream(MediaRequest& request);
 
             /// <summary>
             /// Virtual destructor.
             /// </summary>
             virtual ~Stream();
             bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) override;
-            void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport = kUDP) override;
             bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
             void Pause() override;
             void Stop() override;
@@ -39,10 +36,6 @@ namespace MediaController {
             bool StartLocalRecording(char* filePath, char* fileName) override;
             void StopLocalRecording() override;
             bool SnapShot(char* filePath, char* fileName) override;
-
-        private:
-            Commands* _rtspCommands;
-            std::string _startUrl;
         };
     }
 }

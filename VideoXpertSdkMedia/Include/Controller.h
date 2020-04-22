@@ -27,7 +27,6 @@ namespace MediaController {
         void SetWindow(void* handle) override;
         bool GoToLive() override;
         bool Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
-        void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
         bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
         void Pause() override;
         void Stop() override;
@@ -53,21 +52,9 @@ namespace MediaController {
         void SetStretchToFit(bool stretchToFit)override;
 
         /// <summary>
-        /// The current video stream instance.
+        /// The current stream instance.
         /// </summary>
         StreamBase* stream;
-
-        /// <summary>
-        /// The current audio stream instance.
-        /// </summary>
-        StreamBase* audioStream;
-
-    private:
-        static void CallSetupStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport, bool* result);
-        static void CallPlayStream(StreamBase* stream, float speed, unsigned int unixTime, RTSPNetworkTransport transport);
-
-        // Keep the transport layer around
-        RTSPNetworkTransport _transport;
     };
 }
 #endif // Controller_h__

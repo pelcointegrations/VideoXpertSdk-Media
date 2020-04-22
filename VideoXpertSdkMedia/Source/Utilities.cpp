@@ -23,5 +23,16 @@ namespace MediaController {
             time(&currentTime);
             return static_cast<unsigned int>(currentTime);
         }
+
+        long TzOffset() {
+            tm utcTm{ 0 }, localTm{ 0 };
+            time_t local = time(nullptr);
+            gmtime_s(&utcTm, &local);
+            localtime_s(&localTm, &local);
+            localTm.tm_isdst = 0;
+            local = mktime(&localTm);
+            time_t utc = mktime(&utcTm);
+            return static_cast<long>(difftime(local, utc));
+        }
     }
 }

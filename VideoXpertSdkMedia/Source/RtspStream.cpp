@@ -2,7 +2,6 @@
 #include "RtspStream.h"
 
 #include "Controller.h"
-#include "RtspCommands.h"
 #include "GstWrapper.h"
 #include <StreamState.h>
 
@@ -11,24 +10,15 @@ using namespace MediaController;
 using namespace Constants;
 using namespace VxSdk;
 
-Rtsp::Stream::Stream(MediaRequest& request, bool isVideo) :
-    StreamBase(request),
-    _rtspCommands(new Commands(request.dataInterface.dataEndpoint, isVideo)),
-    _startUrl(request.dataInterface.dataEndpoint)
-{
-}
+Rtsp::Stream::Stream(MediaRequest& request) : StreamBase(request) { }
 
-Rtsp::Stream::~Stream() {
-    delete _rtspCommands;
-    _rtspCommands = nullptr;
-}
+Rtsp::Stream::~Stream() { }
 
 bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
-    if ((this->_mediaRequest.dataInterface.supportsMulticast == true) && (transport != RTSPNetworkTransport::kUDP)) {
+    if (this->_mediaRequest.dataInterface.supportsMulticast && (transport != RTSPNetworkTransport::kUDP)) {
         return false;
     }
-    _gst->SetRtspTransport(transport);
-    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
+
     if (this->_gst->GetMode() != IController::kStopped)
         this->Stop();
 
@@ -37,41 +27,16 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport
     else
         this->_gst->SetMode(IController::kPlayback);
 
-    // Reset to the base URI 
-    this->_rtspCommands->ResetPath(_startUrl);
-
-    // Send the sequence of RTSP commands needed to start a new stream.
-    if (!this->_rtspCommands->Options())
-        return false;
-
-    if (!this->_rtspCommands->Describe(true))
-        return false;
-
-    bool useTCP = (transport == RTSPNetworkTransport::kRTPOverRTSP) ? true : false;
-    if (!this->_rtspCommands->Setup(useTCP, true))
-        return false;
-
-    if (this->_rtspCommands->SetupStream(this->_gst, speed, unixTime))
-        return true;
-
-    return false;
-}
-
-void Rtsp::Stream::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
-    _gst->SetRtspTransport(transport);
-    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
-    if (speed == 0) {
-        speed = 1;
-    }
-    this->_rtspCommands->PlayStream(this->_gst, speed, unixTime);
+    _gst->CreateRtspPipeline(speed, unixTime, this->_mediaRequest, transport);
     this->_gst->Play();
 
     this->state = new PlayingState();
+
+    return true;
 }
 
 void Rtsp::Stream::Pause() {
     // Pause the stream.
-    this->_rtspCommands->Pause();
     this->_gst->Pause();
     this->state = new PausedState();
 }
@@ -85,8 +50,6 @@ void Rtsp::Stream::Stop() {
 bool Rtsp::Stream::GoToLive() { return true; }
 
 bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
-    _gst->SetRtspTransport(transport);
-    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
     if (speed == 0) {
         speed = 1.0;
     }
@@ -97,33 +60,11 @@ bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTranspo
 }
 
 bool Rtsp::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) {
-    _gst->SetRtspTransport(kRTPOverRTSP);
-    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
     if (this->_gst->GetMode() != IController::kStopped)
         this->Stop();
 
     this->_gst->SetMode(IController::kPlayback);
-
-    // Reset to the base URI 
-    this->_rtspCommands->ResetPath(_startUrl);
-
-    // Send the sequence of RTSP commands needed to start a new stream.
-    if (!this->_rtspCommands->Options())
-        return false;
-
-    if (!this->_rtspCommands->Describe(true))
-        return false;
-
-    bool useTCP = true;
-    if (!this->_rtspCommands->Setup(useTCP, true))
-        return false;
-
-    if (!this->_rtspCommands->SetupStream(this->_gst, 1.0, startTime))
-        return false;
-
-    _gst->SetRtspTransport(kRTPOverRTSP);
-    _gst->SetControlUri(this->_rtspCommands->GetControlUri());
-    this->_rtspCommands->PlayStream(this->_gst, 1.0, startTime, true, stopTime, filePath, fileName);
+    this->_gst->StoreVideo(filePath, fileName, startTime, stopTime, this->_mediaRequest);
     this->_gst->Play();
 
     this->state = new PlayingState();
@@ -150,5 +91,5 @@ bool Rtsp::Stream::SnapShot(char* filePath, char* fileName) {
 }
 
 void Rtsp::Stream::NewRequest(MediaRequest& request) {
-    this->_rtspCommands->ResetPath(request.dataInterface.dataEndpoint);
+    this->_mediaRequest = request;
 }

@@ -31,7 +31,7 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
         NewRequest(_mediaRequest);
 
     if (!this->_gst->IsPipelineActive())
-        this->_gst->CreateMjpegPipeline(speed);
+        this->_gst->CreateMjpegPipeline(speed, _dataSession->jpegUri);
 
     if (unixTime == 0) {
         VxSdk::VxResult::Value ret = _dataSession->SetSpeed(speed);
@@ -55,12 +55,11 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
         this->_gst->SetTimestamp(unixTime);
     }
 
+    this->_gst->SetSpeed(speed);
     this->_gst->Play();
     this->state = new PlayingState();
     return true;
 }
-
-void MjpegPull::Stream::PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { }
 
 void MjpegPull::Stream::Pause() {
     if (_dataSession == nullptr)
@@ -98,18 +97,19 @@ bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTr
     if (_dataSession == nullptr)
         return false;
 
-if (speed < 1.0f && speed > -1.0f) {
+    if (speed < 1.0f && speed > -1.0f) {
         if (speed >= 0.0f)
             speed = 1.0f;
         else
             speed = -1.0f;
     }
+
     // If the jpegUri is empty send a new stream request.
     if (_dataSession->jpegUri[0] == '\0')
         NewRequest(_mediaRequest);
 
     if (!this->_gst->IsPipelineActive())
-        this->_gst->CreateMjpegPipeline(speed);
+        this->_gst->CreateMjpegPipeline(speed, _dataSession->jpegUri);
 
     unsigned int seekTime = unixTime == 0 ? this->_gst->GetLastTimestamp() : unixTime;
     // Seek to the last received timestamp generated during the Pause call.
@@ -122,6 +122,7 @@ if (speed < 1.0f && speed > -1.0f) {
     // Set the initial timestamp to the seek time.
     this->_gst->SetTimestamp(seekTime);
 
+    this->_gst->SetSpeed(speed);
 
     this->_gst->Play();
     this->state = new PlayingState();
@@ -132,7 +133,6 @@ void MjpegPull::Stream::NewRequest(MediaRequest& request) {
     _mediaRequest = request;
     _mediaRequest.dataSource->CreateMjpegDataSession(_dataSession);
     if (_dataSession != nullptr) {
-        this->_gst->SetLocation(std::string(_dataSession->jpegUri));
         char* authToken = nullptr;
         int size = 0;
         VxSdk::VxResult::Value result = _dataSession->GetAuthToken(authToken, size);

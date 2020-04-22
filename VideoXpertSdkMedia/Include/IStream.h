@@ -68,11 +68,16 @@ namespace MediaController {
         /// playback. A value of 0 will resume a paused stream.</param>
         /// <param name="unixTime">The start time for playback. A value of 0 will start a live stream.</param>
         virtual bool Play(float speed = 0, unsigned int unixTime = 0, RTSPNetworkTransport transport = kUDP) = 0;
-        
-        virtual void PlayStream(float speed, unsigned int unixTime, RTSPNetworkTransport transport = kUDP) = 0;
 
+        /// <summary>
+        /// Records a stream directly to a local file.
+        /// </summary>
+        /// <param name="startTime">The start time of the stream to record.</param>
+        /// <param name="stopTime">The end time of the stream to record.</param>
+        /// <param name="filePath">The directory to store the generated video file.</param>
+        /// <param name="fileName">The name to use for the generated video file.</param>
+        /// <returns>True if the recording started successfully, otherwise false.</returns>
         virtual bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) = 0;
-
 
         /// <summary>
         /// Starts recording the current video stream to a local file.
