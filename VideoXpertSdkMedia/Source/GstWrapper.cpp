@@ -251,9 +251,25 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_EOS:
         case GST_MESSAGE_ERROR:
-            // Set the pipeline to ready then back to playing.
-            gst_element_set_state(vars->pipeline, GST_STATE_READY);
-            gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+            if (vars->isMjpeg) {
+                // Set the pipeline to ready then back to playing.
+                gst_element_set_state(vars->pipeline, GST_STATE_READY);
+                gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                break;
+            }
+
+            // Enable the other protocols and attempt to connect to the stream again if TCP is not a supported protocol.
+            if (vars->transport == IStream::kRTPOverRTSP && !vars->isRecording && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
+                vars->transport = IStream::kUDP;
+                g_print("Connection failed, retrying with all protocols enabled.\n");
+                g_object_set(vars->videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
+                if (vars->audioSource != nullptr)
+                    g_object_set(vars->audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
+
+                gst_element_set_state(vars->pipeline, GST_STATE_READY);
+                gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+            }
+
             break;
         case GST_MESSAGE_ELEMENT:
             if (vars->isMjpeg)
@@ -464,11 +480,15 @@ static GstBusSyncReply OnPrepareWindow(GstBus* bus, GstMessage* message, GstVars
 }
 
 static void OnSourceSetup(GstElement* element, GstElement* source, GstVars* vars) {
-    g_signal_connect(source, "before-send", G_CALLBACK(OnBeforeSend), vars);
+    vars->audioSource = source;
+    if (vars->transport == IStream::RTSPNetworkTransport::kRTPOverRTSP)
+        g_object_set(vars->audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
+
+    g_signal_connect(vars->audioSource, "before-send", G_CALLBACK(OnBeforeSend), vars);
     if ((vars->speed != 1.0) || (vars->seekTime == 0)) {
         // Will get smoother operation if latency is smaller when the playback is not 1.0
         // Also, want a small latency for live
-        g_object_set(source, "latency", 100, NULL);
+        g_object_set(vars->audioSource, "latency", 100, NULL);
     }
 }
 
@@ -511,14 +531,13 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     _gstVars.seekTime = seekTime;
     _gstVars.currentTimestamp = 0;
     _gstVars.isMjpeg = false;
+    _gstVars.transport = transport;
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     g_object_set(videoSink, "sync", FALSE, NULL);
     g_object_set(_gstVars.videoSource, "location", request.dataInterface.dataEndpoint, NULL);
-    if (transport == IStream::RTSPNetworkTransport::kUDP)
-        g_object_set(_gstVars.videoSource, "protocols", (request.dataInterface.supportsMulticast ? GST_RTSP_LOWER_TRANS_UDP_MCAST : GST_RTSP_LOWER_TRANS_UDP), NULL);
-    else
+    if (_gstVars.transport == IStream::RTSPNetworkTransport::kRTPOverRTSP)
         g_object_set(_gstVars.videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
-   
+
     if ((_gstVars.speed != 1.0) || (_gstVars.seekTime == 0)) {
         // Will get smoother operation if latency is smaller when the playback is not 1.0
         // Also, want a small latency for live
@@ -538,17 +557,23 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
 
     if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
     {
-        _gstVars.audioSource = gst_element_factory_make(Constants::kPlaybin, "audioSource");
-        if (_gstVars.audioSource) {
-            gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.audioSource, NULL);
-            g_object_set(_gstVars.audioSource, "uri", request.audioDataInterface.dataEndpoint, NULL);
-            g_signal_connect(_gstVars.audioSource, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
+        _gstVars.audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
+        if (_gstVars.audioPlaybin) {
+            gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.audioPlaybin, NULL);
+            g_object_set(_gstVars.audioPlaybin, "uri", request.audioDataInterface.dataEndpoint, NULL);
+            g_signal_connect(_gstVars.audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
         }
     }
 
     GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
     gst_bus_set_sync_handler(bus, (GstBusSyncHandler)OnPrepareWindow, &_gstVars, NULL);
+    gst_bus_add_signal_watch(bus);
+    _gstVars.busWatchId = g_signal_connect(G_OBJECT(bus), "message", G_CALLBACK(OnBusMessage), &_gstVars);
     gst_object_unref(bus);
+
+    // Start the loop to receive bus messages.
+    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
+    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
 
     g_print("Created RTSP pipeline.\n");
 }

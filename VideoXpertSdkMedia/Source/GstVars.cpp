@@ -5,6 +5,7 @@ using namespace MediaController;
 
 GstVars::GstVars() {
     pipeline = nullptr;
+    audioPlaybin = nullptr;
     audioSource = nullptr;
     videoSource = nullptr;
     videoDecoder = nullptr;
@@ -45,6 +46,7 @@ GstVars::GstVars() {
     busWatchId = 0;
     loop = nullptr;
     timerId = 0;
+    transport = IStream::kUDP;
 }
 
 GstVars::~GstVars() { }

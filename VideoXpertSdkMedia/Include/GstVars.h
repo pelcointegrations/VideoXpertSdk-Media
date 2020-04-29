@@ -16,6 +16,7 @@ namespace MediaController {
 
         // GStreamer Pipeline Elements
         GstElement *pipeline;
+        GstElement* audioPlaybin;
         GstElement* audioSource;
         GstElement* videoSource;
         GstElement* videoDecoder;
@@ -166,6 +167,11 @@ namespace MediaController {
         /// The timer ID used to monitor for connection loss.
         /// </summary>
         guint timerId;
+
+        /// <summary>
+        /// The transport protocol.
+        /// </summary>
+        IStream::RTSPNetworkTransport transport;
     };
 }
 #endif // GstVars_h__

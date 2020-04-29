@@ -15,10 +15,6 @@ Rtsp::Stream::Stream(MediaRequest& request) : StreamBase(request) { }
 Rtsp::Stream::~Stream() { }
 
 bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) {
-    if (this->_mediaRequest.dataInterface.supportsMulticast && (transport != RTSPNetworkTransport::kUDP)) {
-        return false;
-    }
-
     if (this->_gst->GetMode() != IController::kStopped)
         this->Stop();
 
