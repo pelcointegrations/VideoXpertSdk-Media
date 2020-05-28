@@ -433,13 +433,14 @@ static gboolean OnBeforeSend(GstElement* rtspsrc, GstRTSPMessage* message, GstVa
                 g_print("Scale: %s\n", scale.c_str());
             }
 
+            gst_rtsp_message_remove_header(message, GST_RTSP_HDR_SPEED, -1);
             gst_rtsp_message_remove_header(message, GST_RTSP_HDR_SCALE, -1);
             gst_rtsp_message_add_header(message, GST_RTSP_HDR_SCALE, scale.c_str());
 
             // Set Frames
             stringstream frames;
-            if (vars->speed < 0)
-                frames << Constants::kIntraPrefix << Constants::kForwardSlash << abs(static_cast<int>(vars->speed * Constants::kIntraFrameDiv));
+            if (vars->speed < 0 || vars->speed > 1)
+                frames << Constants::kIntraPrefix;
             else
                 frames << Constants::kFramesAllValue;
 
