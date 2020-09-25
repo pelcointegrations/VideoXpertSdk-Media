@@ -268,6 +268,15 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
 
                 gst_element_set_state(vars->pipeline, GST_STATE_READY);
                 gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                break;
+            }
+
+            if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR && vars->audioPlaybin != nullptr && !g_str_equal(GST_OBJECT_NAME(msg->src), "videoSource"))
+            {
+                g_print("Audio connection failed, remove from the pipeline.\n");
+                gst_bin_remove(GST_BIN(vars->pipeline), vars->audioPlaybin);
+                vars->audioPlaybin = nullptr;
+                gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
             }
 
             break;
@@ -480,12 +489,30 @@ static GstBusSyncReply OnPrepareWindow(GstBus* bus, GstMessage* message, GstVars
     return GST_BUS_DROP;
 }
 
+static gboolean OnSelectStream(GstElement* element, guint num, GstCaps* caps, GstVars* vars) {
+    gchar* name = gst_element_get_name(element);
+    GstStructure* structure = gst_caps_get_structure(caps, 0);
+    const gchar* mediaType = gst_structure_get_string(structure, "media");
+    if (!mediaType)
+        return FALSE;
+
+    // Ignore any non-video sources on the video side of the pipeline.
+    if (g_str_equal(name, "videoSource") && g_str_equal(mediaType, "video"))
+        return TRUE;
+
+    if (!g_str_equal(name, "videoSource") && g_str_equal(mediaType, "audio")) 
+        return TRUE;
+
+    return FALSE;
+}
+
 static void OnSourceSetup(GstElement* element, GstElement* source, GstVars* vars) {
     vars->audioSource = source;
     if (vars->transport == IStream::RTSPNetworkTransport::kRTPOverRTSP)
         g_object_set(vars->audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
 
     g_signal_connect(vars->audioSource, "before-send", G_CALLBACK(OnBeforeSend), vars);
+    g_signal_connect(vars->audioSource, "select-stream", G_CALLBACK(OnSelectStream), vars);
     if ((vars->speed != 1.0) || (vars->seekTime == 0)) {
         // Will get smoother operation if latency is smaller when the playback is not 1.0
         // Also, want a small latency for live
@@ -551,6 +578,7 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     UpdateTextOverlay(&_gstVars);
     SetAspectRatio(_gstVars.aspectRatio);
 
+    g_signal_connect(_gstVars.videoSource, "select-stream", G_CALLBACK(OnSelectStream), &_gstVars);
     g_signal_connect(_gstVars.videoSource, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
     g_signal_connect(_gstVars.videoSource, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
     g_signal_connect(_gstVars.videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
