@@ -25,7 +25,7 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
     if (unixTime == 0)
         unixTime = vars->currentTimestamp;
 
-    if (!vars->pipeline || unixTime != 0 && !vars->includeDateTimeInOverlay || unixTime != 0 && vars->stringToOverlay.length() == 0)
+    if (!vars->pipeline || unixTime != 0 && !vars->includeDateTimeInOverlay || !vars->includeDateTimeInOverlay && vars->stringToOverlay.length() == 0)
         return;
 
     GstElement* textOverlay = gst_bin_get_by_name(GST_BIN(vars->pipeline), "textOverlay");
@@ -51,6 +51,8 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
     g_object_set(textOverlay, "line-alignment", vars->overlayLineAlignment, NULL);
     g_object_set(textOverlay, "shaded-background", TRUE, NULL);
     g_object_set(textOverlay, "shading-value", 30, NULL);
+
+    gst_object_unref(textOverlay);
 }
 
 gboolean RTPLossCallback(GstVars* vars) {
