@@ -159,6 +159,11 @@ namespace MediaController {
         void Pause();
 
         /// <summary>
+        /// Change the RTSP URL for the currently playing stream.
+        /// </summary>
+        void ChangeRtspLocation(MediaRequest request);
+
+        /// <summary>
         /// Starts recording the current video stream to a local file.
         /// </summary>
         /// <param name="filePath">The directory to store the generated video file.</param>
@@ -183,7 +188,7 @@ namespace MediaController {
         /// Clear the pipeline and display window.
         /// </summary>
         void ClearPipeline();
-       
+
         /// <summary>
         /// Set the Overlay String.  You may include date/time to the overlay
         /// </summary>

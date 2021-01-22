@@ -5,20 +5,6 @@ using namespace MediaController;
 
 GstVars::GstVars() {
     pipeline = nullptr;
-    audioPlaybin = nullptr;
-    audioSource = nullptr;
-    videoSource = nullptr;
-    videoDecoder = nullptr;
-    videoParse = nullptr;
-    videoTee = nullptr;
-    videoQueue = nullptr;
-    videoSink = nullptr;
-    teeQueue = nullptr;
-    encoder = nullptr;
-    muxer = nullptr;
-    fileSink = nullptr;
-    rtpBinManager = nullptr;
-    videoTeePad = nullptr;
     includeDateTimeInOverlay = false;
     stringToOverlay.clear();
     overlayPositionH = 0;
@@ -47,6 +33,8 @@ GstVars::GstVars() {
     loop = nullptr;
     timerId = 0;
     transport = IStream::kUDP;
+    workerThread = nullptr;
+    videoSinkName = nullptr;
 }
 
 GstVars::~GstVars() { }

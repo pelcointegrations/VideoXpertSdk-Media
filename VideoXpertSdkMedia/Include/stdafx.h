@@ -3,10 +3,8 @@
 #include <ctime>
 #include <cmath>
 
+#include <vector>
 #include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
-#include <boost/regex.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "VxSdk.h"
 #include "Constants.h"

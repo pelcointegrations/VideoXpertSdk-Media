@@ -2,14 +2,11 @@
 #include "GstWrapper.h"
 
 #include <gst/gst.h>
-#include <gst/rtp/gstrtcpbuffer.h>
 #include <gst/rtp/gstrtpbuffer.h>
 #include <gst/video/video.h>
 #include <gst/rtsp/gstrtsp.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/asio/ip/tcp.hpp>
 #include "libsoup/soup-logger.h"
 #include <chrono>
 #ifdef WIN32
@@ -20,6 +17,13 @@
 
 using namespace std;
 using namespace MediaController;
+
+
+void StartMainLoop(GstVars* vars) {
+    vars->loop = g_main_loop_new(NULL, FALSE);
+    g_main_loop_run(vars->loop);
+    g_thread_exit(0);
+}
 
 void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
     if (unixTime == 0)
@@ -58,9 +62,11 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
 gboolean RTPLossCallback(GstVars* vars) {
     // This means we are done storing the file so stop the pipeline 
     vars->timerId = 0;
-    if (gst_element_send_event(vars->videoDecoder, gst_event_new_eos()) == 0)
+    GstElement* videoDecoder = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoDecoder");
+    if (gst_element_send_event(videoDecoder, gst_event_new_eos()) == 0)
         g_printerr("Cannot send EOS after storing video \n");
 
+    gst_object_unref(videoDecoder);
     gst_element_set_state(vars->pipeline, GST_STATE_NULL);
     gst_object_unref(vars->pipeline);
     vars->pipeline = nullptr;
@@ -90,6 +96,9 @@ static gboolean ResetConnectionLostTimer(GstVars* vars) {
 }
 
 GstPadProbeReturn OnRtpPacketReceived(GstPad* localPad, GstPadProbeInfo* info, GstVars* vars) {
+    if (vars->observerList.size() == 0 && vars->pelcoDataObserverList.size() == 0)
+        return GST_PAD_PROBE_OK;
+
     if (GST_PAD_PROBE_INFO_TYPE(info) | GST_PAD_PROBE_TYPE_BUFFER) {
         if (vars->isStoringVideo) {
             // Set a faster timeout for the storing video fast case since this is the 
@@ -252,6 +261,14 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
     // this when an error is received since it has the same effect of stopping the pipeline.
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_EOS:
+            if (vars->isMjpeg) {
+                // Set the pipeline to ready then back to playing.
+                gst_element_set_state(vars->pipeline, GST_STATE_READY);
+                gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                break;
+            }
+
+            break;
         case GST_MESSAGE_ERROR:
             if (vars->isMjpeg) {
                 // Set the pipeline to ready then back to playing.
@@ -261,24 +278,32 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
             }
 
             // Enable the other protocols and attempt to connect to the stream again if TCP is not a supported protocol.
-            if (vars->transport == IStream::kRTPOverRTSP && !vars->isRecording && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
-                vars->transport = IStream::kUDP;
+            if (vars->transport == IController::kRTPOverRTSP && !vars->isRecording && GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR) {
+                vars->transport = IController::kUDP;
                 g_print("Connection failed, retrying with all protocols enabled.\n");
-                g_object_set(vars->videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
-                if (vars->audioSource != nullptr)
-                    g_object_set(vars->audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
+                GstElement* videoSource = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoSource");
+                GstElement* audioSource = gst_bin_get_by_name(GST_BIN(vars->pipeline), "audioSource");
+                g_object_set(videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
+                if (audioSource != nullptr)
+                    g_object_set(audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP | GST_RTSP_LOWER_TRANS_UDP_MCAST | GST_RTSP_LOWER_TRANS_UDP, NULL);
 
                 gst_element_set_state(vars->pipeline, GST_STATE_READY);
                 gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                gst_object_unref(videoSource);
+                gst_object_unref(audioSource);
                 break;
             }
 
-            if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR && vars->audioPlaybin != nullptr && !g_str_equal(GST_OBJECT_NAME(msg->src), "videoSource"))
+            
+            if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_ERROR && !g_str_equal(GST_OBJECT_NAME(msg->src), "videoSource"))
             {
-                g_print("Audio connection failed, remove from the pipeline.\n");
-                gst_bin_remove(GST_BIN(vars->pipeline), vars->audioPlaybin);
-                vars->audioPlaybin = nullptr;
-                gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                GstElement* audioPlaybin = gst_bin_get_by_name(GST_BIN(vars->pipeline), "audioPlaybin");
+                if (audioPlaybin != nullptr) {
+                    g_print("Audio connection failed, remove from the pipeline.\n");
+                    gst_bin_remove(GST_BIN(vars->pipeline), audioPlaybin);
+                    audioPlaybin = nullptr;
+                    gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                }
             }
 
             break;
@@ -294,46 +319,58 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
                 if (GST_MESSAGE_TYPE(forward_msg) == GST_MESSAGE_EOS) {
                     gchar* elementName = GST_OBJECT_NAME(GST_MESSAGE_SRC(forward_msg));
                     g_print("EOS from element %s\n", elementName);
-                    if (strcmp(elementName, "snapshotFilesink") == 0 || strcmp(elementName, "recordFilesink") == 0) {
-                        g_signal_handler_disconnect(G_OBJECT(bus), vars->busWatchId);
-                        if (vars->teeQueue) {
-                            gst_element_set_state(vars->teeQueue, GST_STATE_NULL);
-                            gst_bin_remove(GST_BIN(vars->pipeline), vars->teeQueue);
-                            gst_object_unref(vars->teeQueue);
-                            vars->teeQueue = nullptr;
+                    if (strcmp(elementName, "fileSink") == 0) {
+                        GstElement* teeQueue = gst_bin_get_by_name(GST_BIN(vars->pipeline), "queue");
+                        if (teeQueue) {
+                            gst_element_set_state(teeQueue, GST_STATE_NULL);
+                            gst_bin_remove(GST_BIN(vars->pipeline), teeQueue);
+                            gst_object_unref(teeQueue);
+                            teeQueue = nullptr;
                         }
 
-                        if (vars->encoder) {
-                            gst_element_set_state(vars->encoder, GST_STATE_NULL);
-                            gst_bin_remove(GST_BIN(vars->pipeline), vars->encoder);
-                            gst_object_unref(vars->encoder);
-                            vars->encoder = nullptr;
+                        GstElement* encoder = gst_bin_get_by_name(GST_BIN(vars->pipeline), "encoder");
+                        if (encoder) {
+                            gst_element_set_state(encoder, GST_STATE_NULL);
+                            gst_bin_remove(GST_BIN(vars->pipeline), encoder);
+                            gst_object_unref(encoder);
+                            encoder = nullptr;
                         }
 
-                        if (vars->muxer) {
-                            gst_element_set_state(vars->muxer, GST_STATE_NULL);
-                            gst_bin_remove(GST_BIN(vars->pipeline), vars->muxer);
-                            gst_object_unref(vars->muxer);
-                            vars->muxer = nullptr;
+                        GstElement* muxer = gst_bin_get_by_name(GST_BIN(vars->pipeline), "muxer");
+                        if (muxer) {
+                            gst_element_set_state(muxer, GST_STATE_NULL);
+                            gst_bin_remove(GST_BIN(vars->pipeline), muxer);
+                            gst_object_unref(muxer);
+                            muxer = nullptr;
                         }
 
-                        if (vars->fileSink) {
-                            gst_element_set_state(vars->fileSink, GST_STATE_NULL);
-                            gst_bin_remove(GST_BIN(vars->pipeline), vars->fileSink);
-                            gst_object_unref(vars->fileSink);
-                            vars->fileSink = nullptr;
+                        GstElement* fileSink = gst_bin_get_by_name(GST_BIN(vars->pipeline), "fileSink");
+                        if (fileSink) {
+                            gst_element_set_state(fileSink, GST_STATE_NULL);
+                            gst_bin_remove(GST_BIN(vars->pipeline), fileSink);
+                            gst_object_unref(fileSink);
+                            fileSink = nullptr;
                         }
 
-                        if (vars->videoTeePad) {
-                            gst_element_release_request_pad(vars->videoTee, vars->videoTeePad);
-                            gst_object_unref(vars->videoTeePad);
-                            vars->videoTeePad = nullptr;
+                        GstElement* videoTee = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoTee");
+                        if (videoTee) {
+                            GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(videoTee), "src_%u");
+                            if (padTemplate) {
+                                GstPad* videoTeePad = gst_element_request_pad(videoTee, padTemplate, NULL, NULL);
+                                if (videoTeePad) {
+                                    gst_element_release_request_pad(videoTee, videoTeePad);
+                                    gst_object_unref(videoTeePad);
+                                    videoTeePad = nullptr;
+                                }
+
+                                gst_object_unref(padTemplate);
+                            }
+
+                            gst_object_unref(videoTee);
                         }
 
                         vars->isRecording = false;
                     }
-
-                    g_main_loop_unref(vars->loop);
                 }
 
                 gst_message_unref(forward_msg);
@@ -364,6 +401,7 @@ static void OnNewManager(GstElement* rtspsrc, GstElement* mgr, GstVars* vars) {
             GST_DEBUG_OBJECT(vars->pipeline, "Set up Time Out Callback");
             g_signal_connect(rtpSession, "on-bye-timeout", (GCallback)OnTimeOut, vars);
             g_signal_connect(rtpSession, "on-timeout", (GCallback)OnTimeOut, vars);
+            gst_object_unref(rtpSession);
         }
         else {
             GST_ERROR_OBJECT(vars->pipeline, "No Timeout callback - will never get session lost callback");
@@ -379,31 +417,40 @@ static void OnPadAdded(GstElement* element, GstPad* new_pad, GstVars* vars) {
     if (g_str_equal(name, "videoSource")) {
         // Setup a probe on the Pad for RTP packets (will give time and metadata)
         gst_pad_add_probe(new_pad, GST_PAD_PROBE_TYPE_BUFFER, GstPadProbeCallback(OnRtpPacketReceived), vars, nullptr);
-        sinkpad = gst_element_get_static_pad(vars->videoDecoder, Constants::kSink);
+        GstElement* videoDecoder = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoDecoder");
+        sinkpad = gst_element_get_static_pad(videoDecoder, Constants::kSink);
+        gst_object_unref(videoDecoder);
     }
     else {
-        sinkpad = gst_element_get_static_pad(vars->videoTee, Constants::kSink);
+        GstElement* videoTee = gst_bin_get_by_name(GST_BIN(vars->pipeline), "videoTee");
+        sinkpad = gst_element_get_static_pad(videoTee, Constants::kSink);
+        gst_object_unref(videoTee);
     }
 
     g_assert(sinkpad);
     gst_pad_link(new_pad, sinkpad);
     gst_object_unref(sinkpad);
+    g_free(name);
 
     // Get session and connect to stream lost signals
-    if (vars->rtpBinManager) {
-        if (g_signal_lookup("get-internal-session", G_OBJECT_TYPE(vars->rtpBinManager)) != 0) {
+    GstElement* rtpBinManager = gst_bin_get_by_name(GST_BIN(vars->pipeline), "rtpBinManager");
+    if (rtpBinManager) {
+        if (g_signal_lookup("get-internal-session", G_OBJECT_TYPE(rtpBinManager)) != 0) {
             GObject* rtpSession = nullptr;
             // In our case, will be zero
-            g_signal_emit_by_name(vars->rtpBinManager, "get-internal-session", 0, &rtpSession);
+            g_signal_emit_by_name(rtpBinManager, "get-internal-session", 0, &rtpSession);
             if (rtpSession) {
                 GST_DEBUG_OBJECT(vars->pipeline, "Set up Time Out Callback");
                 g_signal_connect(rtpSession, "on-bye-timeout", (GCallback)OnTimeOut, vars);
                 g_signal_connect(rtpSession, "on-timeout", (GCallback)OnTimeOut, vars);
+                gst_object_unref(rtpSession);
             }
             else {
                 GST_ERROR_OBJECT(vars->pipeline, "No Timeout callback - will never get session lost callback");
             }
         }
+
+        gst_object_unref(rtpBinManager);
     }
 }
 
@@ -467,11 +514,15 @@ static gboolean OnBeforeSend(GstElement* rtspsrc, GstRTSPMessage* message, GstVa
 }
 
 static GstPadProbeReturn OnUnlink(GstPad* pad, GstPadProbeInfo* info, GstVars* vars) {
-    GstPad* sinkpad = gst_element_get_static_pad(vars->teeQueue, Constants::kSink);
+    GstElement* teeQueue = gst_bin_get_by_name(GST_BIN(vars->pipeline), "queue");
+    GstPad* sinkpad = gst_element_get_static_pad(teeQueue, Constants::kSink);
     gst_pad_unlink(pad, sinkpad);
     gst_object_unref(sinkpad);
+    gst_object_unref(teeQueue);
 
-    gst_element_send_event(vars->encoder, gst_event_new_eos());
+    GstElement* encoder = gst_bin_get_by_name(GST_BIN(vars->pipeline), "encoder");
+    gst_element_send_event(encoder, gst_event_new_eos());
+    gst_object_unref(encoder);
 
     return GST_PAD_PROBE_REMOVE;
 }
@@ -483,8 +534,10 @@ static GstBusSyncReply OnPrepareWindow(GstBus* bus, GstMessage* message, GstVars
 
     gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(GST_MESSAGE_SRC(message)), vars->windowHandle);
 
-    vars->videoSink = (GstElement*)GST_MESSAGE_SRC(message);
-    g_object_set(vars->videoSink, "force-aspect-ratio", !vars->stretchToFit, NULL);
+    vars->videoSinkName = GST_MESSAGE_SRC(message)->name;
+    GstElement* sink = gst_bin_get_by_name(GST_BIN(vars->pipeline), vars->videoSinkName);
+    g_object_set(sink, "force-aspect-ratio", !vars->stretchToFit, NULL);
+    gst_object_unref(sink);
 
     gst_message_unref(message);
 
@@ -495,30 +548,31 @@ static gboolean OnSelectStream(GstElement* element, guint num, GstCaps* caps, Gs
     gchar* name = gst_element_get_name(element);
     GstStructure* structure = gst_caps_get_structure(caps, 0);
     const gchar* mediaType = gst_structure_get_string(structure, "media");
-    if (!mediaType)
-        return FALSE;
+    bool returnValue = FALSE;
+    if (mediaType) {
+        // Ignore any non-video sources on the video side of the pipeline.
+        if (g_str_equal(name, "videoSource") && g_str_equal(mediaType, "video"))
+            returnValue = TRUE;
 
-    // Ignore any non-video sources on the video side of the pipeline.
-    if (g_str_equal(name, "videoSource") && g_str_equal(mediaType, "video"))
-        return TRUE;
+        if (!g_str_equal(name, "videoSource") && g_str_equal(mediaType, "audio"))
+            returnValue = TRUE;
+    }
 
-    if (!g_str_equal(name, "videoSource") && g_str_equal(mediaType, "audio")) 
-        return TRUE;
-
-    return FALSE;
+    g_free(name);
+    return returnValue;
 }
 
 static void OnSourceSetup(GstElement* element, GstElement* source, GstVars* vars) {
-    vars->audioSource = source;
-    if (vars->transport == IStream::RTSPNetworkTransport::kRTPOverRTSP)
-        g_object_set(vars->audioSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
+    gst_element_set_name(source, "audioSource");
+    if (vars->transport == IController::RTSPNetworkTransport::kRTPOverRTSP)
+        g_object_set(source, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
 
-    g_signal_connect(vars->audioSource, "before-send", G_CALLBACK(OnBeforeSend), vars);
-    g_signal_connect(vars->audioSource, "select-stream", G_CALLBACK(OnSelectStream), vars);
+    g_signal_connect(source, "before-send", G_CALLBACK(OnBeforeSend), vars);
+    g_signal_connect(source, "select-stream", G_CALLBACK(OnSelectStream), vars);
     if ((vars->speed != 1.0) || (vars->seekTime == 0)) {
         // Will get smoother operation if latency is smaller when the playback is not 1.0
         // Also, want a small latency for live
-        g_object_set(vars->audioSource, "latency", 100, NULL);
+        g_object_set(source, "latency", 100, NULL);
     }
 }
 
@@ -541,18 +595,18 @@ GstWrapper::GstWrapper() {
 
 GstWrapper::~GstWrapper() = default;
 
-void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaRequest request, IStream::RTSPNetworkTransport transport) {
+void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaRequest request, IController::RTSPNetworkTransport transport) {
     // Create the pipeline.
     _gstVars.pipeline = gst_pipeline_new(nullptr);
-    _gstVars.videoSource = gst_element_factory_make(Constants::kRtspSrc, "videoSource");
-    _gstVars.videoDecoder = gst_element_factory_make(Constants::kDecodeBin, "videoDecoder");
-    _gstVars.videoTee = gst_element_factory_make(Constants::kTee, "videoTee");
-    _gstVars.videoQueue = gst_element_factory_make(Constants::kQueue, "videoQueue");
+    GstElement* videoSource = gst_element_factory_make(Constants::kRtspSrc, "videoSource");
+    GstElement* videoDecoder = gst_element_factory_make(Constants::kDecodeBin, "videoDecoder");
+    GstElement* videoTee = gst_element_factory_make(Constants::kTee, "videoTee");
+    GstElement* videoQueue = gst_element_factory_make(Constants::kQueue, "videoQueue");
     GstElement* textOverlay = gst_element_factory_make(Constants::kTextOverlay, "textOverlay");
     GstElement* aspectRatioCrop = gst_element_factory_make(Constants::kAspectRatioCrop, "aspectRatioCrop");
     GstElement* videoConvert = gst_element_factory_make(Constants::kVideoConvert, "videoConvert");
     GstElement* videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
-    if (!_gstVars.pipeline || !_gstVars.videoSource || !_gstVars.videoDecoder || !_gstVars.videoTee || !_gstVars.videoQueue || !textOverlay || !aspectRatioCrop || !videoConvert || !videoSink) {
+    if (!_gstVars.pipeline || !videoSource || !videoDecoder || !videoTee || !videoQueue || !textOverlay || !aspectRatioCrop || !videoConvert || !videoSink) {
         g_printerr("An element could not be created\n");
         return;
     }
@@ -564,35 +618,35 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     _gstVars.transport = transport;
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     g_object_set(videoSink, "sync", FALSE, NULL);
-    g_object_set(_gstVars.videoSource, "location", request.dataInterface.dataEndpoint, NULL);
-    if (_gstVars.transport == IStream::RTSPNetworkTransport::kRTPOverRTSP)
-        g_object_set(_gstVars.videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
+    g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+    if (_gstVars.transport == IController::RTSPNetworkTransport::kRTPOverRTSP)
+        g_object_set(videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
 
     if ((_gstVars.speed != 1.0) || (_gstVars.seekTime == 0)) {
         // Will get smoother operation if latency is smaller when the playback is not 1.0
         // Also, want a small latency for live
-        g_object_set(_gstVars.videoSource, "latency", 100, NULL);
+        g_object_set(videoSource, "latency", 100, NULL);
     }
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoSource, _gstVars.videoDecoder, _gstVars.videoTee, _gstVars.videoQueue, textOverlay, aspectRatioCrop, videoConvert, videoSink, NULL);
-    gst_element_link_many(_gstVars.videoTee, _gstVars.videoQueue, textOverlay, aspectRatioCrop, videoConvert, videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), videoSource, videoDecoder, videoTee, videoQueue, textOverlay, aspectRatioCrop, videoConvert, videoSink, NULL);
+    gst_element_link_many(videoTee, videoQueue, textOverlay, aspectRatioCrop, videoConvert, videoSink, NULL);
 
     UpdateTextOverlay(&_gstVars);
     SetAspectRatio(_gstVars.aspectRatio);
 
-    g_signal_connect(_gstVars.videoSource, "select-stream", G_CALLBACK(OnSelectStream), &_gstVars);
-    g_signal_connect(_gstVars.videoSource, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
-    g_signal_connect(_gstVars.videoSource, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
-    g_signal_connect(_gstVars.videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
-    g_signal_connect(_gstVars.videoDecoder, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
+    g_signal_connect(videoSource, "select-stream", G_CALLBACK(OnSelectStream), &_gstVars);
+    g_signal_connect(videoSource, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
+    g_signal_connect(videoSource, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
+    g_signal_connect(videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
+    g_signal_connect(videoDecoder, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
 
     if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
     {
-        _gstVars.audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
-        if (_gstVars.audioPlaybin) {
-            gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.audioPlaybin, NULL);
-            g_object_set(_gstVars.audioPlaybin, "uri", request.audioDataInterface.dataEndpoint, NULL);
-            g_signal_connect(_gstVars.audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
+        GstElement* audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
+        if (audioPlaybin) {
+            gst_bin_add_many(GST_BIN(_gstVars.pipeline), audioPlaybin, NULL);
+            g_object_set(audioPlaybin, "uri", request.audioDataInterface.dataEndpoint, NULL);
+            g_signal_connect(audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
         }
     }
 
@@ -603,8 +657,7 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     gst_object_unref(bus);
 
     // Start the loop to receive bus messages.
-    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
-    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
+    _gstVars.workerThread = g_thread_new(NULL, (GThreadFunc)StartMainLoop, &_gstVars);
 
     g_print("Created RTSP pipeline.\n");
 }
@@ -612,12 +665,12 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
 void GstWrapper::CreateMjpegPipeline(float speed, char* jpegUri) {
     // Create the pipeline.
     _gstVars.pipeline = gst_pipeline_new(nullptr);
-    _gstVars.videoSource = gst_element_factory_make(Constants::kHttpSrc, "videoSource");
-    _gstVars.videoDecoder = gst_element_factory_make(Constants::kJpegDec, "jpegDecoder");
+    GstElement* videoSource = gst_element_factory_make(Constants::kHttpSrc, "videoSource");
+    GstElement* videoDecoder = gst_element_factory_make(Constants::kJpegDec, "jpegDecoder");
     GstElement* textOverlay = gst_element_factory_make(Constants::kTextOverlay, "textOverlay");
     GstElement* videoConvert = gst_element_factory_make(Constants::kVideoConvert, "videoConvert");
     GstElement* videoSink = gst_element_factory_make(Constants::kVideoSink, "videoSink");
-    if (!_gstVars.pipeline || !_gstVars.videoSource || !_gstVars.videoDecoder || !textOverlay || !videoConvert || !videoSink) {
+    if (!_gstVars.pipeline || !videoSource || !videoDecoder || !textOverlay || !videoConvert || !videoSink) {
         g_printerr("An element could not be created\n");
         return;
     }
@@ -626,21 +679,21 @@ void GstWrapper::CreateMjpegPipeline(float speed, char* jpegUri) {
     _gstVars.isMjpeg = true;
     static const char* cookie[] = { _gstVars.cookie.c_str(), NULL };
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kCookies, cookie, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kRetries, 5, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kKeepAlive, TRUE, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kLocation, jpegUri, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kHttpLogLevel, SOUP_LOGGER_LOG_HEADERS, NULL);
-    g_object_set(_gstVars.videoSource, Constants::kSslStrict, FALSE, NULL);
+    g_object_set(videoSource, Constants::kCookies, cookie, NULL);
+    g_object_set(videoSource, Constants::kRetries, 5, NULL);
+    g_object_set(videoSource, Constants::kKeepAlive, TRUE, NULL);
+    g_object_set(videoSource, Constants::kLocation, jpegUri, NULL);
+    g_object_set(videoSource, Constants::kHttpLogLevel, SOUP_LOGGER_LOG_HEADERS, NULL);
+    g_object_set(videoSource, Constants::kSslStrict, FALSE, NULL);
 
     // Add elements to the pipeline and link.
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoSource, _gstVars.videoDecoder, textOverlay, videoConvert, videoSink, NULL);
-    gst_element_link_many(_gstVars.videoSource, _gstVars.videoDecoder, textOverlay, videoConvert, videoSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), videoSource, videoDecoder, textOverlay, videoConvert, videoSink, NULL);
+    gst_element_link_many(videoSource, videoDecoder, textOverlay, videoConvert, videoSink, NULL);
 
     UpdateTextOverlay(&_gstVars);
 
     // Add a probe to souphttpsrc.
-    GstPad* httpsrcpad = gst_element_get_static_pad(_gstVars.videoSource, Constants::kSrc);
+    GstPad* httpsrcpad = gst_element_get_static_pad(videoSource, Constants::kSrc);
     gst_pad_add_probe(httpsrcpad, GST_PAD_PROBE_TYPE_EVENT_BOTH, GstPadProbeCallback(OnJpegPacketReceived), &_gstVars, nullptr);
     gst_object_unref(httpsrcpad);
 
@@ -651,8 +704,8 @@ void GstWrapper::CreateMjpegPipeline(float speed, char* jpegUri) {
     gst_object_unref(bus);
 
     // Start the loop to receive bus messages.
-    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
-    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
+    _gstVars.workerThread = g_thread_new(NULL, (GThreadFunc)StartMainLoop, &_gstVars);
+
     g_print("Created MJPEG pipeline.\n");
 }
 
@@ -665,44 +718,41 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
         if (!create_directories(recordingPath))
             return false;
 
-    GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(_gstVars.videoTee), "src_%u");
-    _gstVars.videoTeePad = gst_element_request_pad(_gstVars.videoTee, padTemplate, NULL, NULL);
-    _gstVars.teeQueue = gst_element_factory_make(Constants::kQueue, "recordQueue");
-    _gstVars.encoder = gst_element_factory_make(Constants::kX264Enc, "recordEncoder");
-    _gstVars.muxer = gst_element_factory_make(Constants::kMp4Mux, "recordMuxer");
-    _gstVars.fileSink = gst_element_factory_make(Constants::kFilesink, "recordFilesink");
+    GstElement* videoTee = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoTee");
+    GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(videoTee), "src_%u");
+    GstPad* videoTeePad = gst_element_request_pad(videoTee, padTemplate, NULL, NULL);
+    GstElement* teeQueue = gst_element_factory_make(Constants::kQueue, "queue");
+    GstElement* encoder = gst_element_factory_make(Constants::kX264Enc, "encoder");
+    GstElement* muxer = gst_element_factory_make(Constants::kMp4Mux, "muxer");
+    GstElement* fileSink = gst_element_factory_make(Constants::kFilesink, "fileSink");
 
-    g_object_set(_gstVars.fileSink, "location", recordingPath.append(std::string(fileName) + ".mp4").generic_string().c_str(), NULL);
-    g_object_set(_gstVars.encoder, "tune", 4, NULL);
+    g_object_set(fileSink, "location", recordingPath.append(std::string(fileName) + ".mp4").generic_string().c_str(), NULL);
+    g_object_set(encoder, "tune", 4, NULL);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(_gstVars.teeQueue)), gst_object_ref(_gstVars.encoder), gst_object_ref(_gstVars.muxer), gst_object_ref(_gstVars.fileSink), NULL);
-    gst_element_link_many(_gstVars.teeQueue, _gstVars.encoder, _gstVars.muxer, _gstVars.fileSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(teeQueue)), gst_object_ref(encoder), gst_object_ref(muxer), gst_object_ref(fileSink), NULL);
+    gst_element_link_many(teeQueue, encoder, muxer, fileSink, NULL);
 
-    gst_element_sync_state_with_parent(_gstVars.teeQueue);
-    gst_element_sync_state_with_parent(_gstVars.encoder);
-    gst_element_sync_state_with_parent(_gstVars.muxer);
-    gst_element_sync_state_with_parent(_gstVars.fileSink);
+    gst_element_sync_state_with_parent(teeQueue);
+    gst_element_sync_state_with_parent(encoder);
+    gst_element_sync_state_with_parent(muxer);
+    gst_element_sync_state_with_parent(fileSink);
 
-    GstPad* sinkpad = gst_element_get_static_pad(_gstVars.teeQueue, Constants::kSink);
-    GstPadLinkReturn linkReturn = gst_pad_link(_gstVars.videoTeePad, sinkpad);
+    GstPad* sinkpad = gst_element_get_static_pad(teeQueue, Constants::kSink);
+    GstPadLinkReturn linkReturn = gst_pad_link(videoTeePad, sinkpad);
     gst_object_unref(sinkpad);
-
-    GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
-    gst_bus_add_signal_watch(bus);
-    _gstVars.busWatchId = g_signal_connect(G_OBJECT(bus), "message", G_CALLBACK(OnBusMessage), &_gstVars);
-    gst_object_unref(bus);
-
-    // Start the loop to receive bus messages.
-    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
-    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
-
     _gstVars.isRecording = true;
+
     return true;
 }
 
 void GstWrapper::StopLocalRecord() {
     if (_gstVars.isRecording)
-        gst_pad_add_probe(_gstVars.videoTeePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
+    {
+        GstElement* videoTee = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoTee");
+        GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(videoTee), "src_%u");
+        GstPad* videoTeePad = gst_element_request_pad(videoTee, padTemplate, NULL, NULL);
+        gst_pad_add_probe(videoTeePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
+    }
 }
 
 bool GstWrapper::SnapShot(char* filePath, char* fileName) {
@@ -718,37 +768,29 @@ bool GstWrapper::SnapShot(char* filePath, char* fileName) {
     //   This g-streamer seems to work.  It is very important to set snapshot to true.
     //   Also, you must have set the window to the media controller (which sets the window handler for gstreamr)
     //   to store JPEGs or video.
-    GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(_gstVars.videoTee), "src_%u");
-    _gstVars.videoTeePad = gst_element_request_pad(_gstVars.videoTee, padTemplate, NULL, NULL);
-    _gstVars.teeQueue = gst_element_factory_make(Constants::kQueue, "snapshotQueue");
-    _gstVars.encoder = gst_element_factory_make(Constants::kJpegEnc, "snapshotEncoder");
-    _gstVars.fileSink = gst_element_factory_make(Constants::kFilesink, "snapshotFilesink");
+    GstElement* videoTee = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoTee");
+    GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(videoTee), "src_%u");
+    GstPad* videoTeePad = gst_element_request_pad(videoTee, padTemplate, NULL, NULL);
+    GstElement* teeQueue = gst_element_factory_make(Constants::kQueue, "queue");
+    GstElement* encoder = gst_element_factory_make(Constants::kJpegEnc, "encoder");
+    GstElement* fileSink = gst_element_factory_make(Constants::kFilesink, "fileSink");
 
-    g_object_set(_gstVars.encoder, "snapshot", 1, NULL);
-    g_object_set(_gstVars.fileSink, "location", snapshotPath.append(std::string(fileName) + ".jpg").generic_string().c_str(), NULL);
+    g_object_set(encoder, "snapshot", 1, NULL);
+    g_object_set(fileSink, "location", snapshotPath.append(std::string(fileName) + ".jpg").generic_string().c_str(), NULL);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(_gstVars.teeQueue)), gst_object_ref(_gstVars.encoder), gst_object_ref(_gstVars.fileSink), NULL);
-    gst_element_link_many(_gstVars.teeQueue, _gstVars.encoder, _gstVars.fileSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), teeQueue, encoder, fileSink, NULL);
+    gst_element_link_many(teeQueue, encoder, fileSink, NULL);
 
-    gst_element_sync_state_with_parent(_gstVars.teeQueue);
-    gst_element_sync_state_with_parent(_gstVars.encoder);
-    gst_element_sync_state_with_parent(_gstVars.fileSink);
+    gst_element_sync_state_with_parent(teeQueue);
+    gst_element_sync_state_with_parent(encoder);
+    gst_element_sync_state_with_parent(fileSink);
 
-    GstPad* sinkPad = gst_element_get_static_pad(_gstVars.teeQueue, Constants::kSink);
-    if (gst_pad_link(_gstVars.videoTeePad, sinkPad) != GST_PAD_LINK_OK) {
+    GstPad* sinkPad = gst_element_get_static_pad(teeQueue, Constants::kSink);
+    if (gst_pad_link(videoTeePad, sinkPad) != GST_PAD_LINK_OK) {
         g_printerr("\nLink To Pad FAILED in JPEG snapshot function\n");
         return false;
     }
     gst_object_unref(sinkPad);
-
-    GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
-    gst_bus_add_signal_watch(bus);
-    _gstVars.busWatchId = g_signal_connect(G_OBJECT(bus), "message", G_CALLBACK(OnBusMessage), &_gstVars);
-    gst_object_unref(bus);
-    
-    // Start the loop to receive bus messages.
-    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
-    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
 
     // So how do you know if the file is done?  We will actually look for the file, or wait for a timeout
     // Even if you timeout, we still want to send an EOS to tear down correctly
@@ -760,7 +802,7 @@ bool GstWrapper::SnapShot(char* filePath, char* fileName) {
     }
 
     // Disconnect from the tee when it is idle, so probe for an idle condition in the tee
-    gst_pad_add_probe(_gstVars.videoTeePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
+    gst_pad_add_probe(videoTeePad, GST_PAD_PROBE_TYPE_IDLE, GstPadProbeCallback(OnUnlink), &_gstVars, nullptr);
 
     return true;
 }
@@ -776,12 +818,12 @@ bool GstWrapper::StoreVideo(char* filePath, char* fileName, unsigned int startTi
 
     // Create the pipeline.
     _gstVars.pipeline = gst_pipeline_new(nullptr);
-    _gstVars.videoSource = gst_element_factory_make(Constants::kRtspSrc, "videoSource");
-    _gstVars.videoDecoder = gst_element_factory_make(Constants::kH264Depay, "videoDepay");
-    _gstVars.videoParse = gst_element_factory_make(Constants::kH264Parse, "videoParse");
-    _gstVars.muxer = gst_element_factory_make(Constants::kMkvMux, "storageMuxer");
-    _gstVars.fileSink = gst_element_factory_make(Constants::kFilesink, "storageFilesink");
-    if (!_gstVars.pipeline || !_gstVars.videoSource || !_gstVars.videoDecoder || !_gstVars.videoParse || !_gstVars.muxer || !_gstVars.fileSink) {
+    GstElement* videoSource = gst_element_factory_make(Constants::kRtspSrc, "videoSource");
+    GstElement* videoDecoder = gst_element_factory_make(Constants::kH264Depay, "videoDepay");
+    GstElement* videoParse = gst_element_factory_make(Constants::kH264Parse, "videoParse");
+    GstElement* muxer = gst_element_factory_make(Constants::kMkvMux, "storageMuxer");
+    GstElement* fileSink = gst_element_factory_make(Constants::kFilesink, "storageFilesink");
+    if (!_gstVars.pipeline || !videoSource || !videoDecoder || !videoParse || !muxer || !fileSink) {
         g_printerr("An element could not be created\n");
         return false;
     }
@@ -790,25 +832,24 @@ bool GstWrapper::StoreVideo(char* filePath, char* fileName, unsigned int startTi
     _gstVars.endTime = endTime;
     _gstVars.isStoringVideo = true;
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
-    g_object_set(_gstVars.videoSource, "location", request.dataInterface.dataEndpoint, NULL);
-    g_object_set(_gstVars.videoSource, "protocols", 0x4, NULL);
-    g_object_set(_gstVars.videoSource, "latency", 100, NULL);
-    g_object_set(_gstVars.videoParse, "config-interval", 1, NULL);
-    g_object_set(_gstVars.videoParse, "disable-passthrough", 1, NULL);
-    g_object_set(_gstVars.fileSink, "location", recordingPath.append(std::string(fileName) + ".mkv").generic_string().c_str(), NULL);
-    g_object_set(_gstVars.fileSink, "sync", 0, NULL);
-    g_object_set(_gstVars.fileSink, "qos", 0, NULL);
+    g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+    g_object_set(videoSource, "protocols", 0x4, NULL);
+    g_object_set(videoSource, "latency", 100, NULL);
+    g_object_set(videoParse, "config-interval", 1, NULL);
+    g_object_set(videoParse, "disable-passthrough", 1, NULL);
+    g_object_set(fileSink, "location", recordingPath.append(std::string(fileName) + ".mkv").generic_string().c_str(), NULL);
+    g_object_set(fileSink, "sync", 0, NULL);
+    g_object_set(fileSink, "qos", 0, NULL);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), _gstVars.videoSource, _gstVars.videoDecoder, _gstVars.videoParse, _gstVars.muxer, _gstVars.fileSink, NULL);
-    gst_element_link_many(_gstVars.videoDecoder, _gstVars.videoParse, _gstVars.muxer, _gstVars.fileSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), videoSource, videoDecoder, videoParse, muxer, fileSink, NULL);
+    gst_element_link_many(videoDecoder, videoParse, muxer, fileSink, NULL);
 
-    g_signal_connect(_gstVars.videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
-    g_signal_connect(_gstVars.videoSource, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
-    g_signal_connect(_gstVars.videoSource, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
+    g_signal_connect(videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
+    g_signal_connect(videoSource, "before-send", G_CALLBACK(OnBeforeSend), &_gstVars);
+    g_signal_connect(videoSource, "new-manager", G_CALLBACK(OnNewManager), &_gstVars);
 
     // Start the loop to receive bus messages.
-    _gstVars.loop = g_main_loop_new(nullptr, FALSE);
-    boost::thread _workerThread(g_main_loop_run, _gstVars.loop);
+    _gstVars.workerThread = g_thread_new(NULL, (GThreadFunc)StartMainLoop, &_gstVars);
 
     g_print("Created store video pipeline\n");
     return true;
@@ -820,11 +861,18 @@ void GstWrapper::ClearPipeline() {
         _gstVars.timerId = 0;
     }
 
+    if (_gstVars.videoSinkName)
+    {
+        g_free(_gstVars.videoSinkName);
+        _gstVars.videoSinkName = nullptr;
+    }
+
     if (_gstVars.pipeline) {
         g_print("Stopping the pipeline.\n");
         if (_gstVars.busWatchId > 0) {
             GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
             gst_bus_remove_signal_watch(bus);
+            g_signal_handler_disconnect(G_OBJECT(bus), _gstVars.busWatchId);
             gst_object_unref(bus);
         }
 
@@ -833,18 +881,29 @@ void GstWrapper::ClearPipeline() {
 
         if (_gstVars.isStoringVideo) {
             // This means we are done storing the file; stop the pipeline.
-            if (gst_element_send_event(_gstVars.videoDecoder, gst_event_new_eos()) == 0)
+            GstElement* videoDecoder = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoDecoder");
+            if (gst_element_send_event(videoDecoder, gst_event_new_eos()) == 0)
                 g_printerr("Cannot send EOS after storing video \n");
 
             return;
         }
 
         StopLocalRecord();
+        g_main_loop_quit(_gstVars.loop);
+        g_main_loop_unref(_gstVars.loop);
+        _gstVars.loop = nullptr;
+
+        g_thread_unref(_gstVars.workerThread);
+        _gstVars.workerThread = nullptr;
+
         gst_element_set_state(_gstVars.pipeline, GST_STATE_NULL);
+        if (gst_element_get_state(_gstVars.pipeline, NULL, NULL, 5 * GST_SECOND) != GST_STATE_CHANGE_SUCCESS) {
+            g_print("Failed to stop pipeline.\n");
+            return;
+        }
+
         gst_object_unref(_gstVars.pipeline);
         _gstVars.pipeline = nullptr;
-        if (_gstVars.loop)
-            g_main_loop_unref(_gstVars.loop);      
     }
 }
 
@@ -859,6 +918,46 @@ void GstWrapper::Pause() {
         gst_element_set_state(_gstVars.pipeline, GST_STATE_PAUSED);
         _gstVars.isPaused = true;
     }
+}
+
+void GstWrapper::ChangeRtspLocation(MediaRequest request) {
+    if (!_gstVars.pipeline || _gstVars.isRecording || _gstVars.isStoringVideo)
+        return;
+
+    g_print("Changing RTSP Location\n");
+    GstElement* videoSource = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoSource");
+    GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
+    gst_bus_post(bus, gst_message_new_eos(GST_OBJECT(videoSource)));
+    gst_object_unref(bus);
+
+    gst_element_set_state(_gstVars.pipeline, GST_STATE_READY);
+    
+    g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+    gst_object_unref(videoSource);
+    if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
+    {
+        GstElement* audioPlaybin = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "audioPlaybin");
+        if (audioPlaybin == nullptr)
+        {
+            audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
+            gst_bin_add_many(GST_BIN(_gstVars.pipeline), audioPlaybin, NULL);
+            g_signal_connect(audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
+        }
+        
+        g_object_set(audioPlaybin, "uri", request.audioDataInterface.dataEndpoint, NULL);
+    }
+    else
+    {
+        GstElement* audioPlaybin = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "audioPlaybin");
+        if (audioPlaybin != nullptr)
+        {
+            gst_element_set_state(audioPlaybin, GST_STATE_NULL);
+            gst_bin_remove(GST_BIN(_gstVars.pipeline), audioPlaybin);
+            audioPlaybin = nullptr;
+        }
+    }
+
+    gst_element_set_state(_gstVars.pipeline, GST_STATE_PLAYING);
 }
 
 void GstWrapper::AddObserver(TimestampEventCallback observer) {
@@ -888,6 +987,7 @@ void GstWrapper::RemoveStreamObserver(StreamEventCallback observer) {
 void GstWrapper::ClearObservers() {
     _gstVars.observerList.clear();
     _gstVars.pelcoDataObserverList.clear();
+    _gstVars.streamEventObserverList.clear();
 }
 
 void GstWrapper::AddEventData(void* customData) {
@@ -977,8 +1077,12 @@ void GstWrapper::SetAspectRatio(Controller::AspectRatios aspectRatio) {
 
 void GstWrapper::SetStretchToFit(bool stretchToFit) {
     _gstVars.stretchToFit = stretchToFit;
-    if (_gstVars.pipeline && _gstVars.videoSink)
-        g_object_set(_gstVars.videoSink, "force-aspect-ratio", !stretchToFit, NULL);
+    if (_gstVars.pipeline && _gstVars.videoSinkName)
+    {
+        GstElement* sink = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), _gstVars.videoSinkName);
+        g_object_set(sink, "force-aspect-ratio", !stretchToFit, NULL);
+        g_object_unref(sink);
+    }
 }
 
 void GstWrapper::SetWindowHandle(guintptr winhandle) {

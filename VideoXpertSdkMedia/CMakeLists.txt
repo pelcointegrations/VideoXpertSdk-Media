@@ -42,7 +42,6 @@ link_directories(
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCES})
 
 target_link_libraries(${PROJECT_NAME} optimized VxSdk.lib)
-target_link_libraries(${PROJECT_NAME} optimized libboost_regex-vc140-mt-1_62.lib)
 if (MSVC)
 target_link_libraries(${PROJECT_NAME} optimized d3d9.lib)
 endif()

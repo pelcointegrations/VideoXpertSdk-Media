@@ -25,6 +25,10 @@ bool Rtsp::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTransport
 
     _gst->CreateRtspPipeline(speed, unixTime, this->_mediaRequest, transport);
     this->_gst->Play();
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
 
     this->state = new PlayingState();
 
@@ -40,6 +44,11 @@ void Rtsp::Stream::Pause() {
 void Rtsp::Stream::Stop() {
     this->_gst->ClearPipeline();
     this->_gst->SetMode(IController::kStopped);
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new StoppedState();
 }
 
@@ -51,6 +60,11 @@ bool Rtsp::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTranspo
     }
 
     this->_gst->SetSpeed(speed);
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new PlayingState();
     return true;
 }
@@ -62,6 +76,10 @@ bool Rtsp::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, ch
     this->_gst->SetMode(IController::kPlayback);
     this->_gst->StoreVideo(filePath, fileName, startTime, stopTime, this->_mediaRequest);
     this->_gst->Play();
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
 
     this->state = new PlayingState();
     return true;
@@ -88,4 +106,5 @@ bool Rtsp::Stream::SnapShot(char* filePath, char* fileName) {
 
 void Rtsp::Stream::NewRequest(MediaRequest& request) {
     this->_mediaRequest = request;
+    this->_gst->ChangeRtspLocation(request);
 }

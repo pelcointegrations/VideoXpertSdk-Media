@@ -7,7 +7,6 @@
 #include "StreamBase.h"
 #include "StreamState.h"
 #include "GstWrapper.h"
-#include <boost/thread.hpp>
 
 using namespace MediaController;
 

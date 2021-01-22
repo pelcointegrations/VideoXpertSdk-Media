@@ -16,22 +16,6 @@ namespace MediaController {
 
         // GStreamer Pipeline Elements
         GstElement *pipeline;
-        GstElement* audioPlaybin;
-        GstElement* audioSource;
-        GstElement* videoSource;
-        GstElement* videoDecoder;
-        GstElement* videoParse;
-        GstElement* videoTee;
-        GstElement* videoQueue;
-        GstElement* videoSink;
-
-        // Dynamic Pipeline Elements
-        GstElement* teeQueue;
-        GstElement* encoder;
-        GstElement* muxer;
-        GstElement* fileSink;
-        GstElement* rtpBinManager;
-        GstPad* videoTeePad;
 
         /// <summary>
         /// Indicates whether the date and time should be included in the text overlay.
@@ -172,6 +156,16 @@ namespace MediaController {
         /// The transport protocol.
         /// </summary>
         IStream::RTSPNetworkTransport transport;
+
+        /// <summary>
+        /// The thread that will run the main loop.
+        /// </summary>
+        GThread* workerThread;
+
+        /// <summary>
+        /// The name of the video sink chosen by AutoVideoSink.
+        /// </summary>
+        gchar* videoSinkName;
     };
 }
 #endif // GstVars_h__

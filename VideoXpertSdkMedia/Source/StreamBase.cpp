@@ -16,7 +16,15 @@ StreamBase::StreamBase(MediaRequest& request) :
 }
 
 StreamBase::~StreamBase() {
+    if (this->_gst != nullptr) {
+        delete this->_gst;
+        this->_gst = nullptr;
+    }
 
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
 }
 
 bool StreamBase::Play(float speed, unsigned int unixTime, RTSPNetworkTransport transport) { return false; }

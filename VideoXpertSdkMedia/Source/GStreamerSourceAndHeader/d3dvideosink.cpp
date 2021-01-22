@@ -199,7 +199,8 @@ gst_d3dvideosink_finalize (GObject * gobject)
 
   g_rec_mutex_clear (&sink->lock);
 
-  G_OBJECT_CLASS (gst_d3dvideosink_parent_class)->finalize (gobject);
+  if (gobject->ref_count > 0)
+    G_OBJECT_CLASS (gst_d3dvideosink_parent_class)->finalize (gobject);
 }
 
 static void

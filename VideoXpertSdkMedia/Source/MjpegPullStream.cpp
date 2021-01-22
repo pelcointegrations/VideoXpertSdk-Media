@@ -2,8 +2,6 @@
 #include "MjpegPullStream.h"
 
 #include "GstWrapper.h"
-#include <boost/uuid/random_generator.hpp>
-#include <boost/uuid/uuid_io.hpp>
 #include <StreamState.h>
 
 using namespace MediaController;
@@ -57,6 +55,12 @@ bool MjpegPull::Stream::Play(float speed, unsigned int unixTime, RTSPNetworkTran
 
     this->_gst->SetSpeed(speed);
     this->_gst->Play();
+
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new PlayingState();
     return true;
 }
@@ -74,6 +78,12 @@ void MjpegPull::Stream::Pause() {
     this->_gst->Pause();
     // The timestamp is set to the last received timestamp so Resume will start at the correct time.
     this->_gst->SetTimestamp(this->_gst->GetLastTimestamp());
+
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new PausedState();
 }
 
@@ -88,6 +98,12 @@ void MjpegPull::Stream::Stop() {
     _dataSession->DeleteDataSession();
     this->_gst->ClearPipeline();
     this->_gst->SetMode(IController::kStopped);
+
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new StoppedState();
 }
 
@@ -125,6 +141,12 @@ bool MjpegPull::Stream::Resume(float speed, unsigned int unixTime, RTSPNetworkTr
     this->_gst->SetSpeed(speed);
 
     this->_gst->Play();
+
+    if (this->state != nullptr) {
+        delete this->state;
+        this->state = nullptr;
+    }
+
     this->state = new PlayingState();
     return true;
 }
