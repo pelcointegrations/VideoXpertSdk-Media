@@ -59,6 +59,20 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
     gst_object_unref(textOverlay);
 }
 
+gboolean ReconnectCallback(GstVars* vars) {
+    g_source_remove(vars->reconnectTimerId);
+    vars->reconnectTimerId = 0;
+
+    if (!vars->isDisconnected)
+        return FALSE;
+
+    // Set the pipeline to ready then back to playing.
+    gst_element_set_state(vars->pipeline, GST_STATE_READY);
+    gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+
+    return FALSE;
+}
+
 gboolean RTPLossCallback(GstVars* vars) {
     // This means we are done storing the file so stop the pipeline 
     vars->timerId = 0;
@@ -260,6 +274,20 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
     // and then set it back to PLAYING.  This reinitializes the pipeline and it fetches a new image and the process repeats.  We also do
     // this when an error is received since it has the same effect of stopping the pipeline.
     switch (GST_MESSAGE_TYPE(msg)) {
+        case GST_MESSAGE_STREAM_START:
+            if (!vars->isDisconnected)
+                break;
+
+            vars->isDisconnected = false;
+            // Send the event to all observers.
+            for (size_t i = 0; i < vars->streamEventObserverList.size(); i++) {
+                StreamEvent* newEvent = new StreamEvent();
+                newEvent->eventType = StreamEvent::kConnectionRestored;
+                vars->streamEventObserverList[i](newEvent);
+                delete newEvent;
+            }
+
+            break;
         case GST_MESSAGE_EOS:
             if (vars->isMjpeg) {
                 // Set the pipeline to ready then back to playing.
@@ -268,12 +296,38 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
                 break;
             }
 
+            if (!vars->isDisconnected && !vars->isRecording && !vars->isStoringVideo && !vars->isChangingLocation) {
+                vars->isDisconnected = true;
+                // Send the event to all observers.
+                for (size_t i = 0; i < vars->streamEventObserverList.size(); i++) {
+                    StreamEvent* newEvent = new StreamEvent();
+                    newEvent->eventType = StreamEvent::kConnectionLost;
+                    vars->streamEventObserverList[i](newEvent);
+                    delete newEvent;
+                }
+
+                if (vars->reconnectTimerId == 0)
+                    vars->reconnectTimerId = g_timeout_add_seconds(5, (GSourceFunc)ReconnectCallback, vars);
+
+                break;
+            }
+
+            if (vars->isChangingLocation)
+                vars->isChangingLocation = false;
+
             break;
         case GST_MESSAGE_ERROR:
             if (vars->isMjpeg) {
                 // Set the pipeline to ready then back to playing.
                 gst_element_set_state(vars->pipeline, GST_STATE_READY);
                 gst_element_set_state(vars->pipeline, GST_STATE_PLAYING);
+                break;
+            }
+
+            if (vars->isDisconnected) {
+                if (vars->reconnectTimerId == 0)
+                    vars->reconnectTimerId = g_timeout_add_seconds(30, (GSourceFunc)ReconnectCallback, vars);
+
                 break;
             }
 
@@ -383,6 +437,10 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
 
 static void OnTimeOut(GObject* session, GObject* source, GstVars* vars) {
     GST_DEBUG_OBJECT(vars->pipeline, "Session Timed Out");
+    if (vars->isDisconnected)
+        return;
+
+    vars->isDisconnected = true;
     // Send the event to all observers.
     for (size_t i = 0; i < vars->streamEventObserverList.size(); i++) {
         StreamEvent* newEvent = new StreamEvent();
@@ -390,6 +448,9 @@ static void OnTimeOut(GObject* session, GObject* source, GstVars* vars) {
         vars->streamEventObserverList[i](newEvent);
         delete newEvent;
     }
+
+    if (vars->reconnectTimerId == 0)
+        vars->reconnectTimerId = g_timeout_add_seconds(5, (GSourceFunc)ReconnectCallback, vars);
 }
 
 static void OnNewManager(GstElement* rtspsrc, GstElement* mgr, GstVars* vars) {
@@ -433,7 +494,7 @@ static void OnPadAdded(GstElement* element, GstPad* new_pad, GstVars* vars) {
     g_free(name);
 
     // Get session and connect to stream lost signals
-    GstElement* rtpBinManager = gst_bin_get_by_name(GST_BIN(vars->pipeline), "rtpBinManager");
+    GstElement* rtpBinManager = gst_bin_get_by_name(GST_BIN(vars->pipeline), "manager");
     if (rtpBinManager) {
         if (g_signal_lookup("get-internal-session", G_OBJECT_TYPE(rtpBinManager)) != 0) {
             GObject* rtpSession = nullptr;
@@ -534,7 +595,7 @@ static GstBusSyncReply OnPrepareWindow(GstBus* bus, GstMessage* message, GstVars
 
     gst_video_overlay_set_window_handle(GST_VIDEO_OVERLAY(GST_MESSAGE_SRC(message)), vars->windowHandle);
 
-    vars->videoSinkName = GST_MESSAGE_SRC(message)->name;
+    vars->videoSinkName = g_strdup(GST_MESSAGE_SRC(message)->name);
     GstElement* sink = gst_bin_get_by_name(GST_BIN(vars->pipeline), vars->videoSinkName);
     g_object_set(sink, "force-aspect-ratio", !vars->stretchToFit, NULL);
     gst_object_unref(sink);
@@ -618,7 +679,11 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     _gstVars.transport = transport;
     g_object_set(GST_BIN(_gstVars.pipeline), "message-forward", TRUE, NULL);
     g_object_set(videoSink, "sync", FALSE, NULL);
-    g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+    if (request.rtspVideoEndpoint != nullptr && !std::string(request.rtspVideoEndpoint).empty())
+        g_object_set(videoSource, "location", request.rtspVideoEndpoint, NULL);
+    else
+        g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+
     if (_gstVars.transport == IController::RTSPNetworkTransport::kRTPOverRTSP)
         g_object_set(videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
 
@@ -640,7 +705,16 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     g_signal_connect(videoSource, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
     g_signal_connect(videoDecoder, "pad-added", G_CALLBACK(OnPadAdded), &_gstVars);
 
-    if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
+    if (request.rtspAudioEndpoint != nullptr && !std::string(request.rtspAudioEndpoint).empty())
+    {
+        GstElement* audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
+        if (audioPlaybin) {
+            gst_bin_add_many(GST_BIN(_gstVars.pipeline), audioPlaybin, NULL);
+            g_object_set(audioPlaybin, "uri", request.rtspAudioEndpoint, NULL);
+            g_signal_connect(audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
+        }
+    }
+    else if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
     {
         GstElement* audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
         if (audioPlaybin) {
@@ -861,6 +935,11 @@ void GstWrapper::ClearPipeline() {
         _gstVars.timerId = 0;
     }
 
+    if (_gstVars.reconnectTimerId != 0) {
+        g_source_remove(_gstVars.reconnectTimerId);
+        _gstVars.reconnectTimerId = 0;
+    }
+
     if (_gstVars.videoSinkName)
     {
         g_free(_gstVars.videoSinkName);
@@ -889,19 +968,18 @@ void GstWrapper::ClearPipeline() {
         }
 
         StopLocalRecord();
-        g_main_loop_quit(_gstVars.loop);
-        g_main_loop_unref(_gstVars.loop);
-        _gstVars.loop = nullptr;
-
-        g_thread_unref(_gstVars.workerThread);
-        _gstVars.workerThread = nullptr;
-
-        gst_element_set_state(_gstVars.pipeline, GST_STATE_NULL);
-        if (gst_element_get_state(_gstVars.pipeline, NULL, NULL, 5 * GST_SECOND) != GST_STATE_CHANGE_SUCCESS) {
-            g_print("Failed to stop pipeline.\n");
-            return;
+        if (_gstVars.loop) {
+            g_main_loop_quit(_gstVars.loop);
+            g_main_loop_unref(_gstVars.loop);
+            _gstVars.loop = nullptr;
         }
 
+        if (_gstVars.workerThread) {
+            g_thread_unref(_gstVars.workerThread);
+            _gstVars.workerThread = nullptr;
+        }
+
+        gst_element_set_state(_gstVars.pipeline, GST_STATE_NULL);
         gst_object_unref(_gstVars.pipeline);
         _gstVars.pipeline = nullptr;
     }
@@ -925,16 +1003,34 @@ void GstWrapper::ChangeRtspLocation(MediaRequest request) {
         return;
 
     g_print("Changing RTSP Location\n");
+    _gstVars.isChangingLocation = true;
     GstElement* videoSource = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "videoSource");
     GstBus* bus = gst_pipeline_get_bus(GST_PIPELINE(_gstVars.pipeline));
     gst_bus_post(bus, gst_message_new_eos(GST_OBJECT(videoSource)));
     gst_object_unref(bus);
 
     gst_element_set_state(_gstVars.pipeline, GST_STATE_READY);
-    
-    g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+
+    if (request.rtspVideoEndpoint != nullptr && !std::string(request.rtspVideoEndpoint).empty())
+        g_object_set(videoSource, "location", request.rtspVideoEndpoint, NULL);
+    else
+        g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
+
     gst_object_unref(videoSource);
-    if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
+
+    if (request.rtspAudioEndpoint != nullptr && !std::string(request.rtspAudioEndpoint).empty())
+    {
+        GstElement* audioPlaybin = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "audioPlaybin");
+        if (audioPlaybin == nullptr)
+        {
+            audioPlaybin = gst_element_factory_make(Constants::kPlaybin, "audioPlaybin");
+            gst_bin_add_many(GST_BIN(_gstVars.pipeline), audioPlaybin, NULL);
+            g_signal_connect(audioPlaybin, "source-setup", G_CALLBACK(OnSourceSetup), &_gstVars);
+        }
+
+        g_object_set(audioPlaybin, "uri", request.rtspAudioEndpoint, NULL);
+    }
+    else if (request.audioDataSource != nullptr && !std::string(request.audioDataInterface.dataEndpoint).empty())
     {
         GstElement* audioPlaybin = gst_bin_get_by_name(GST_BIN(_gstVars.pipeline), "audioPlaybin");
         if (audioPlaybin == nullptr)

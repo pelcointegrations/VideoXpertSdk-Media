@@ -17,7 +17,9 @@ namespace MediaController {
             /// <summary>The connection to the stream was lost.</summary>
             kConnectionLost,
             /// <summary>Stored a file</summary>
-            kFileStoredComplete
+            kFileStoredComplete,
+            /// <summary>The connection to the stream was restored.</summary>
+            kConnectionRestored
         };
 
         /// <summary>

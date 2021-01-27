@@ -32,9 +32,12 @@ GstVars::GstVars() {
     busWatchId = 0;
     loop = nullptr;
     timerId = 0;
+    reconnectTimerId = 0;
     transport = IStream::kUDP;
     workerThread = nullptr;
     videoSinkName = nullptr;
+    isDisconnected = false;
+    isChangingLocation = false;
 }
 
 GstVars::~GstVars() { }

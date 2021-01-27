@@ -153,6 +153,11 @@ namespace MediaController {
         guint timerId;
 
         /// <summary>
+        /// The timer ID used to reconnect after a connection loss.
+        /// </summary>
+        guint reconnectTimerId;
+
+        /// <summary>
         /// The transport protocol.
         /// </summary>
         IStream::RTSPNetworkTransport transport;
@@ -166,6 +171,16 @@ namespace MediaController {
         /// The name of the video sink chosen by AutoVideoSink.
         /// </summary>
         gchar* videoSinkName;
+
+        /// <summary>
+        /// Indicates whether or not the current stream is in a disconnected state.
+        /// </summary>
+        bool isDisconnected;
+
+        /// <summary>
+        /// Indicates whether or not the RTSP location is being changed.
+        /// </summary>
+        bool isChangingLocation;
     };
 }
 #endif // GstVars_h__

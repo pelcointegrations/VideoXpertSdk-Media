@@ -13,6 +13,8 @@ namespace MediaController {
         MediaRequest() {
             dataSource = nullptr;
             audioDataSource = nullptr;
+            rtspVideoEndpoint = nullptr;
+            rtspAudioEndpoint = nullptr;
         }
 
         /// <summary>
@@ -34,6 +36,16 @@ namespace MediaController {
         /// The protocol to use for the new audio stream.
         /// </summary>
         VxSdk::IVxDataInterface audioDataInterface;
+
+        /// <summary>
+        /// The RTSP video endpoint URI.  If set, this will be used instead of the dataSource/dataInterface.
+        /// </summary>
+        char* rtspVideoEndpoint;
+
+        /// <summary>
+        /// The RTSP audio endpoint URI. If set, this will be used instead of the audioDataSource/audioDataInterface.
+        /// </summary>
+        char* rtspAudioEndpoint;
     };
 }
 #endif // MediaRequest_h__
