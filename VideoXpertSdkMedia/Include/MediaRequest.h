@@ -15,6 +15,8 @@ namespace MediaController {
             audioDataSource = nullptr;
             rtspVideoEndpoint = nullptr;
             rtspAudioEndpoint = nullptr;
+            username = nullptr;
+            password = nullptr;
         }
 
         /// <summary>
@@ -46,6 +48,16 @@ namespace MediaController {
         /// The RTSP audio endpoint URI. If set, this will be used instead of the audioDataSource/audioDataInterface.
         /// </summary>
         char* rtspAudioEndpoint;
+
+        /// <summary>
+        /// The username for RTSP authentication.
+        /// </summary>
+        char* username;
+
+        /// <summary>
+        /// The password for RTSP authentication.
+        /// </summary>
+        char* password;
     };
 }
 #endif // MediaRequest_h__

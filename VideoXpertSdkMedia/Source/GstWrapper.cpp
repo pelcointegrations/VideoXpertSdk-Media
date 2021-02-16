@@ -684,6 +684,12 @@ void GstWrapper::CreateRtspPipeline(float speed, unsigned int seekTime, MediaReq
     else
         g_object_set(videoSource, "location", request.dataInterface.dataEndpoint, NULL);
 
+    if (request.username != nullptr && !std::string(request.username).empty())
+        g_object_set(videoSource, "user-id", request.username, NULL);
+
+    if (request.password != nullptr && !std::string(request.password).empty())
+        g_object_set(videoSource, "user-pw", request.password, NULL);
+
     if (_gstVars.transport == IController::RTSPNetworkTransport::kRTPOverRTSP)
         g_object_set(videoSource, "protocols", GST_RTSP_LOWER_TRANS_TCP, NULL);
 
