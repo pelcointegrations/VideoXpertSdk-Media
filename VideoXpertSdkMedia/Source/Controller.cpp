@@ -88,7 +88,7 @@ bool Controller::StoreStream(unsigned int startTime, unsigned int stopTime, char
 }
 
 
-bool Controller::StartLocalRecording(char* filePath, char* fileName) {
+bool Controller::StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) {
     if (filePath == nullptr || fileName == nullptr)
         return false;
 
@@ -96,7 +96,7 @@ bool Controller::StartLocalRecording(char* filePath, char* fileName) {
         return false;
 
     if (this->stream != nullptr)
-        return this->stream->StartLocalRecording(filePath, fileName);
+        return this->stream->StartLocalRecording(filePath, fileName, includeOverlays);
 
     return false;
 }

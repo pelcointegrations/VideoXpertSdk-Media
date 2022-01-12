@@ -172,7 +172,7 @@ void MjpegPull::Stream::NewRequest(MediaRequest& request) {
 
 bool MjpegPull::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) { return false; }
 
-bool MjpegPull::Stream::StartLocalRecording(char* filePath, char* fileName) { return false; }
+bool MjpegPull::Stream::StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) { return false; }
 
 void MjpegPull::Stream::StopLocalRecording() { }
 

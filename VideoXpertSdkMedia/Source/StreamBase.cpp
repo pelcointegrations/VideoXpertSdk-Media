@@ -39,7 +39,7 @@ bool StreamBase::Resume(float speed, unsigned int unixTime, RTSPNetworkTransport
 
 bool StreamBase::StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) { return false; }
 
-bool StreamBase::StartLocalRecording(char* filePath, char* fileName) { return false; }
+bool StreamBase::StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) { return false; }
 
 void StreamBase::StopLocalRecording() { }
 

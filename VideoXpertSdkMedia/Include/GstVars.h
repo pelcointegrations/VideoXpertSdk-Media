@@ -181,6 +181,11 @@ namespace MediaController {
         /// Indicates whether or not the RTSP location is being changed.
         /// </summary>
         bool isChangingLocation;
+
+        /// <summary>
+        /// Indicates whether the current overlays should be included in locally recorded video.
+        /// </summary>
+        bool includeRecordingOverlays;
     };
 }
 #endif // GstVars_h__

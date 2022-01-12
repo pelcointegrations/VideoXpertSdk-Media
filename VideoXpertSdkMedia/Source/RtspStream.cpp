@@ -86,11 +86,11 @@ bool Rtsp::Stream::StoreStream(unsigned int startTime, unsigned int stopTime, ch
 }
 
 
-bool Rtsp::Stream::StartLocalRecording(char* filePath, char* fileName) {
+bool Rtsp::Stream::StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) {
     if (this->_gst->GetMode() == IController::kStopped)
         return false;
 
-    return this->_gst->StartLocalRecord(filePath, fileName);
+    return this->_gst->StartLocalRecord(filePath, fileName, includeOverlays);
 }
 
 void Rtsp::Stream::StopLocalRecording() {

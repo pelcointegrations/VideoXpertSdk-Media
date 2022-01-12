@@ -30,7 +30,7 @@ namespace MediaController {
         bool StoreStream(unsigned int startTime, unsigned int stopTime, char* filePath, char* fileName) override;
         void Pause() override;
         void Stop() override;
-        bool StartLocalRecording(char* filePath, char* fileName) override;
+        bool StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) override;
         void StopLocalRecording() override;
         bool SnapShot(char* filePath, char* fileName) override;
         void NewRequest(MediaRequest& request) override;

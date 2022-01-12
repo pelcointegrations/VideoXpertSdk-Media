@@ -34,7 +34,7 @@ namespace MediaController {
             bool Resume(float speed, unsigned int unixTime, RTSPNetworkTransport transport) override;
             bool GoToLive() override;
             void NewRequest(MediaRequest& request) override;
-            bool StartLocalRecording(char* filePath, char* fileName) override;
+            bool StartLocalRecording(char* filePath, char* fileName, bool includeOverlays) override;
             void StopLocalRecording() override;
             bool SnapShot(char* filePath, char* fileName) override;
 

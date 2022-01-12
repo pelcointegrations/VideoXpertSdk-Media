@@ -168,8 +168,9 @@ namespace MediaController {
         /// </summary>
         /// <param name="filePath">The directory to store the generated video file.</param>
         /// <param name="fileName">The name to use for the generated video file.</param>
+        /// <param name="includeOverlays">True to include the current overlays in the recorded video file, otherwise false.</param>
         /// <returns>True if the recording started successfully, otherwise false.</returns>
-        bool StartLocalRecord(char* filePath, char* fileName);
+        bool StartLocalRecord(char* filePath, char* fileName, bool includeOverlays);
 
         /// <summary>
         /// Stops the current local recording in progress, if any.

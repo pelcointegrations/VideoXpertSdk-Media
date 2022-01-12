@@ -38,6 +38,7 @@ GstVars::GstVars() {
     videoSinkName = nullptr;
     isDisconnected = false;
     isChangingLocation = false;
+    includeRecordingOverlays = true;
 }
 
 GstVars::~GstVars() { }

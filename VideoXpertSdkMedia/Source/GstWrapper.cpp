@@ -33,7 +33,8 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
         return;
 
     GstElement* textOverlay = gst_bin_get_by_name(GST_BIN(vars->pipeline), "textOverlay");
-    if (!textOverlay)
+    GstElement* textOverlayRecording = gst_bin_get_by_name(GST_BIN(vars->pipeline), "textOverlayRecording");
+    if (!textOverlay && !textOverlayRecording)
         return;
 
     string overlayText = vars->stringToOverlay;
@@ -49,14 +50,28 @@ void UpdateTextOverlay(GstVars* vars, unsigned int unixTime = 0) {
     }
 
     boost::trim(overlayText);
-    g_object_set(textOverlay, "text", overlayText.c_str(), NULL);
-    g_object_set(textOverlay, "valignment", vars->overlayPositionV, NULL);
-    g_object_set(textOverlay, "halignment", vars->overlayPositionH, NULL);
-    g_object_set(textOverlay, "line-alignment", vars->overlayLineAlignment, NULL);
-    g_object_set(textOverlay, "shaded-background", TRUE, NULL);
-    g_object_set(textOverlay, "shading-value", 30, NULL);
+    if (textOverlay) {
+        g_object_set(textOverlay, "text", overlayText.c_str(), NULL);
+        g_object_set(textOverlay, "valignment", vars->overlayPositionV, NULL);
+        g_object_set(textOverlay, "halignment", vars->overlayPositionH, NULL);
+        g_object_set(textOverlay, "line-alignment", vars->overlayLineAlignment, NULL);
+        g_object_set(textOverlay, "shaded-background", TRUE, NULL);
+        g_object_set(textOverlay, "shading-value", 30, NULL);
+        gst_object_unref(textOverlay);
+    }
 
-    gst_object_unref(textOverlay);
+    if (textOverlayRecording) {
+        if (vars->includeRecordingOverlays) {
+            g_object_set(textOverlayRecording, "text", overlayText.c_str(), NULL);
+            g_object_set(textOverlayRecording, "valignment", vars->overlayPositionV, NULL);
+            g_object_set(textOverlayRecording, "halignment", vars->overlayPositionH, NULL);
+            g_object_set(textOverlayRecording, "line-alignment", vars->overlayLineAlignment, NULL);
+            g_object_set(textOverlayRecording, "shaded-background", TRUE, NULL);
+            g_object_set(textOverlayRecording, "shading-value", 30, NULL);
+        }
+
+        gst_object_unref(textOverlayRecording);
+    }
 }
 
 gboolean ReconnectCallback(GstVars* vars) {
@@ -380,6 +395,14 @@ gboolean OnBusMessage(GstBus* bus, GstMessage* msg, GstVars* vars) {
                             gst_bin_remove(GST_BIN(vars->pipeline), teeQueue);
                             gst_object_unref(teeQueue);
                             teeQueue = nullptr;
+                        }
+
+                        GstElement* textOverlayRecording = gst_bin_get_by_name(GST_BIN(vars->pipeline), "textOverlayRecording");
+                        if (textOverlayRecording) {
+                            gst_element_set_state(textOverlayRecording, GST_STATE_NULL);
+                            gst_bin_remove(GST_BIN(vars->pipeline), textOverlayRecording);
+                            gst_object_unref(textOverlayRecording);
+                            textOverlayRecording = nullptr;
                         }
 
                         GstElement* encoder = gst_bin_get_by_name(GST_BIN(vars->pipeline), "encoder");
@@ -789,10 +812,11 @@ void GstWrapper::CreateMjpegPipeline(float speed, char* jpegUri) {
     g_print("Created MJPEG pipeline.\n");
 }
 
-bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
+bool GstWrapper::StartLocalRecord(char* filePath, char* fileName, bool includeOverlays) {
     if (_gstVars.isRecording)
         return false;
 
+    _gstVars.includeRecordingOverlays = includeOverlays;
     boost::filesystem::path recordingPath = boost::filesystem::path(filePath);
     if (!exists(recordingPath))
         if (!create_directories(recordingPath))
@@ -802,6 +826,7 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
     GstPadTemplate* padTemplate = gst_element_class_get_pad_template(GST_ELEMENT_GET_CLASS(videoTee), "src_%u");
     GstPad* videoTeePad = gst_element_request_pad(videoTee, padTemplate, NULL, NULL);
     GstElement* teeQueue = gst_element_factory_make(Constants::kQueue, "queue");
+    GstElement* textOverlayRecording = gst_element_factory_make(Constants::kTextOverlay, "textOverlayRecording");
     GstElement* encoder = gst_element_factory_make(Constants::kX264Enc, "encoder");
     GstElement* muxer = gst_element_factory_make(Constants::kMp4Mux, "muxer");
     GstElement* fileSink = gst_element_factory_make(Constants::kFilesink, "fileSink");
@@ -809,10 +834,11 @@ bool GstWrapper::StartLocalRecord(char* filePath, char* fileName) {
     g_object_set(fileSink, "location", recordingPath.append(std::string(fileName) + ".mp4").generic_string().c_str(), NULL);
     g_object_set(encoder, "tune", 4, NULL);
 
-    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(teeQueue)), gst_object_ref(encoder), gst_object_ref(muxer), gst_object_ref(fileSink), NULL);
-    gst_element_link_many(teeQueue, encoder, muxer, fileSink, NULL);
+    gst_bin_add_many(GST_BIN(_gstVars.pipeline), GST_ELEMENT(gst_object_ref(teeQueue)), gst_object_ref(textOverlayRecording), gst_object_ref(encoder), gst_object_ref(muxer), gst_object_ref(fileSink), NULL);
+    gst_element_link_many(teeQueue, textOverlayRecording, encoder, muxer, fileSink, NULL);
 
     gst_element_sync_state_with_parent(teeQueue);
+    gst_element_sync_state_with_parent(textOverlayRecording);
     gst_element_sync_state_with_parent(encoder);
     gst_element_sync_state_with_parent(muxer);
     gst_element_sync_state_with_parent(fileSink);

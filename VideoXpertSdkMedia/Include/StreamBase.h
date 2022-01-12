@@ -24,7 +24,7 @@ namespace MediaController {
         void Pause() override;
         void Stop() override;
         void NewRequest(MediaRequest& request) override;
-        bool StartLocalRecording(char* filePath, char* fileName);
+        bool StartLocalRecording(char* filePath, char* fileName, bool includeOverlays = true);
         void StopLocalRecording();
         bool SnapShot(char* filePath, char* fileName);
 
